@@ -3,7 +3,10 @@ from aiogram.types import Message
 
 
 async def get_start(message: Message, bot: Bot):
-    await bot.send_message(message.from_user.id, f'Привет')
+    await bot.send_message(
+        message.from_user.id,
+        f'Привет! Я буду напоминать тебе брать зонтик в дождливую погоду.'
+    )
 
 
 async def get_photo(message: Message, bot: Bot):
