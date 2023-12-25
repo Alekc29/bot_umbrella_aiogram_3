@@ -5,6 +5,23 @@ class DataBase:
     def __init__(self, db_file):
         self.connection = sqlite3.connect(db_file)
         self.cur = self.connection.cursor()
+        self.create_db()
+
+    def create_db(self):
+        try:
+            query = ('CREATE TABLE IF NOT EXISTS users('
+                     'user_id TEXT PRIMARY KEY,'
+                     'user_name TEXT,'
+                     'city TEXT,'
+                     'reminder_time TEXT);')
+            self.cur.execute(query)
+            self.connection.commit()
+        except sqlite3.Error as ex:
+            print(f'Ошибка при создании базы: {ex}.')
+
+    def __dell__(self):
+        self.cur.close()
+        self.connection.close()
 
     def user_exists(self, user_id):
         ''' Проверяет есть ли юзер в базе. '''
@@ -16,7 +33,7 @@ class DataBase:
             ''', (user_id,)).fetchall()
             return bool(len(result))
         
-    def add_user(self, user_id, user_name, city=None, timer=None):
+    def add_user(self, user_id, user_name, city=None, reminder_time=None):
         ''' Создаёт нового пользователя. '''
         with self.connection:
             return self.cur.execute('''
@@ -33,14 +50,14 @@ class DataBase:
                 WHERE user_id = ?;
             ''', (town, user_id,))
         
-    def add_timer(self, user_id, timer):
+    def add_timer(self, user_id, reminder_time):
         ''' Изменяет время напоминания. '''
         with self.connection:
             return self.cur.execute('''
                 UPDATE users 
-                SET timer = ?
+                SET reminder_time = ?
                 WHERE user_id = ?;
-            ''', (timer, user_id,))
+            ''', (reminder_time, user_id,))
 
     def get_users(self):
         with self.connection:
@@ -62,7 +79,7 @@ class DataBase:
         ''' Выдаёт время из базы по id. '''
         with self.connection:
             return self.cur.execute('''
-                SELECT timer
+                SELECT reminder_time
                 FROM users
                 WHERE user_id = ?;
             ''', (user_id,)).fetchone()[0]
@@ -75,11 +92,4 @@ class DataBase:
             ''').fetchone()[0]
 
 
-def sql_start():
-    global base, cur
-    base = sqlite3.connect('users.db')
-    cur = base.cursor()
-    if not base:
-        return 'Произошла ошибка при подключении базы.'
-    base.execute('CREATE TABLE IF NOT EXISTS users(user_id TEXT PRIMARY KEY, user_name TEXT, city TEXT, timer TEXT)')
-    base.commit()
+

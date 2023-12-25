@@ -6,9 +6,8 @@ from aiogram import Dispatcher, F
 from aiogram.fsm.context import FSMContext
 from aiogram.types import Message
 
-from main import db
-from core.utils.class_fsm import FSMTown
 from core.utils.data_base import DataBase
+from core.utils.class_fsm import FSMTown
 
 
 load_dotenv()
@@ -55,6 +54,7 @@ async def load_town_base(message: Message,
                          state: FSMContext):
     ''' Ловим ответ по городу для напоминания про зонтик. '''
     try:
+        db = DataBase('users.db')
         db.add_city(message.from_user.id, message.text)
         await message.answer(f'Ваш город {message.text} успешно занесён в базу.')
         await state.update_data(town=message.text)

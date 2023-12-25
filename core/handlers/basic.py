@@ -1,8 +1,12 @@
 from aiogram import Bot
 from aiogram.types import Message
 
+from core.utils.data_base import DataBase
 
 async def get_start(message: Message, bot: Bot):
+    db = DataBase('users.db')
+    if not db.user_exists(message.from_user.id):
+        db.add_user(message.from_user.id, message.from_user.first_name)
     await bot.send_message(
         message.from_user.id,
         f'Привет! Я буду напоминать тебе брать зонтик в дождливую погоду.'

@@ -9,27 +9,19 @@ from dotenv import load_dotenv
 from core.handlers import basic, client
 from core.utils.commands import set_commands
 from core.utils.class_fsm import FSMTown
-from core.utils.data_base import sql_start, DataBase
-
 
 load_dotenv()
 
 BOT_TOKEN = os.getenv('BOT_TOKEN')
 DEV_ID = os.getenv('DEV_ID')
 
-data = sql_start()
-db = DataBase('users.db')
 
 async def start_bot(bot: Bot):
     await set_commands(bot)
     await bot.send_message(DEV_ID, text='Бот запущен!')
-    
-    if data:
-        await bot.send_message(DEV_ID, text=data)
 
 
 async def stop_bot(bot: Bot):
-    
     await bot.send_message(DEV_ID, text='Бот остановлен!')
 
 
