@@ -21,6 +21,10 @@ async def set_commands(bot: Bot):
             description='Задать время напоминания'
         ),
         BotCommand(
+            command='wish',
+            description='Пожелание разработчику'
+        ),
+        BotCommand(
             command='cancel',
             description='Сбросить'
         ),

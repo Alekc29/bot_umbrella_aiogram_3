@@ -3,13 +3,11 @@ import logging
 import os
 import contextlib
 
-from aiogram import Bot, Dispatcher, F
-from aiogram.filters import Command
+from aiogram import Bot, Dispatcher
 from dotenv import load_dotenv
 
 from core.handlers import basic, client
 from core.utils.commands import set_commands
-from core.utils.class_fsm import FSMTown
 
 load_dotenv()
 
@@ -34,16 +32,10 @@ async def start():
     dp = Dispatcher()
     dp.startup.register(start_bot)
     dp.shutdown.register(stop_bot)
-    dp.message.register(client.get_town,
-                        Command(commands='Задать_город'))
-    dp.message.register(client.load_town_base, FSMTown.town)
-    dp.message.register(client.load_timer_base, FSMTown.reminder_time)
-    dp.message.register(basic.get_photo,
-                        F.photo)
-    dp.message.register(basic.get_hello,
-                        F.text == 'Привет')
-    dp.message.register(basic.get_start,
-                        Command(commands=['start', 'run']))
+    dp.include_routers(
+        basic.router,
+        client.router
+    )
     try:
         await dp.start_polling(bot)
     except Exception as ex: 

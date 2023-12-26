@@ -2,7 +2,8 @@ import os
 import requests
 
 from dotenv import load_dotenv
-from aiogram import Bot, F
+from aiogram import Bot, Router, F
+from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 from aiogram.types import Message
 
@@ -13,7 +14,10 @@ load_dotenv()
 API_KEY_WEATHER = os.getenv('API_KEY_WEATHER')
 DEV_ID = os.getenv('DEV_ID')
 
+router = Router()
 
+
+@router.message(Command('city'))
 async def get_town(message: Message, state: FSMContext):
     ''' Задать город для получения напоминания взять зонтик. '''
     await message.answer('Напишите свой город.')
@@ -21,6 +25,7 @@ async def get_town(message: Message, state: FSMContext):
     await state.set_state(FSMTown.town)
     
 
+@router.message(Command('cancel'))
 async def cancel_handler(message: Message,
                          state: FSMContext):
     ''' Выход из машины состояний. '''
@@ -28,16 +33,19 @@ async def cancel_handler(message: Message,
     if current_state is None:
         return
     await state.clear()
-    await message.reply('Ok')
+    await message.answer('Ok')
+    await message.delete()
 
 
+@router.message(FSMTown.town)
 async def load_town_base(message: Message,
                          state: FSMContext):
     ''' Ловим ответ по городу для напоминания про зонтик. '''
     try:
         db = DataBase('users.db')
         db.add_city(message.from_user.id, message.text)
-        await message.answer(f'Ваш город {message.text} успешно занесён в базу.')
+        await message.answer(f'Ваш город {message.text} успешно занесён в базу.'
+                             f'Теперь введите время напоминания в формате чч:мм.')
         await state.update_data(town=message.text)
         await state.set_state(FSMTown.reminder_time)
     except Exception as ex:
@@ -46,6 +54,7 @@ async def load_town_base(message: Message,
                              'Произошла ошибка при занесении в базу.')
 
 
+@router.message(Command('time'))
 async def get_time(message: Message,
                    state: FSMContext):
     ''' Задать время для получения напоминания взять зонтик. '''
@@ -54,6 +63,7 @@ async def get_time(message: Message,
     await state.set_state(FSMTown.reminder_time)
 
 
+@router.message(FSMTown.reminder_time)
 async def load_timer_base(message: Message,
                           state: FSMContext):
     ''' Ловим ответ по времени для напоминания про зонтик. '''
@@ -67,6 +77,7 @@ async def load_timer_base(message: Message,
         await message.answer(f'Произошла ошибка при занесении в базу.')
 
 
+@router.message(Command('wish'))
 async def get_wish(message: Message,
                    state: FSMContext):
     ''' Просит оставить пожелание разработчику. '''
@@ -75,6 +86,7 @@ async def get_wish(message: Message,
     await state.set_state(FSMWish.wish)
 
 
+@router.message(FSMWish.wish)
 async def load_wish_base(message: Message,
                          bot: Bot,
                          state: FSMContext):
@@ -85,7 +97,7 @@ async def load_wish_base(message: Message,
     await message.answer(f'Ваше пожелание отправлено разработчику.')
     
 
-# @dp.message_handler(commands=['Погода'])
+@router.message(Command('weather'))
 async def get_weather(message: Message):
     db = DataBase('users.db')
     city = db.get_city(message.from_user.id)
