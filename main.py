@@ -1,6 +1,7 @@
 import asyncio
 import logging
 import os
+import contextlib
 
 from aiogram import Bot, Dispatcher, F
 from aiogram.filters import Command
@@ -52,4 +53,5 @@ async def start():
 
 
 if __name__ == "__main__":
-    asyncio.run(start())
+    with contextlib.suppress(KeyboardInterrupt, SystemExit):
+        asyncio.run(start())
