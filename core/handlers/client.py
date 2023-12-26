@@ -2,35 +2,16 @@ import os
 import requests
 
 from dotenv import load_dotenv
-from aiogram import Dispatcher, F
+from aiogram import Bot, F
 from aiogram.fsm.context import FSMContext
 from aiogram.types import Message
 
 from core.utils.data_base import DataBase
-from core.utils.class_fsm import FSMTown
-
+from core.utils.class_fsm import FSMTown, FSMWish
 
 load_dotenv()
 API_KEY_WEATHER = os.getenv('API_KEY_WEATHER')
 DEV_ID = os.getenv('DEV_ID')
-
-
-# @dp.message_handler(commands=['start', 'help'])
-# async def command_start(message: Message):
-#     try:
-#         if not db.user_exists(message.from_user.id):
-#             db.add_user(message.from_user.id, message.from_user.first_name)
-#         await bot.send_message(
-#             message.from_user.id,
-#             'Привет! Я буду напоминать тебе брать зонтик в дождливую погоду.',
-#             reply_markup=kb_client
-#         )
-#         await message.delete()
-#     except Exception as ex:
-#         print(ex)
-#         await message.reply(
-#             'Общение с ботом через ЛС, напишите ему:\nhttps://t.me/reminder_umbrella_bot'
-#         )
 
 
 async def get_town(message: Message, state: FSMContext):
@@ -65,58 +46,48 @@ async def load_town_base(message: Message,
                              'Произошла ошибка при занесении в базу.')
 
 
-async def get_time(message: Message):
+async def get_time(message: Message,
+                   state: FSMContext):
     ''' Задать время для получения напоминания взять зонтик. '''
-    await FSMTime.timer.set()
     await message.answer('В какое время вы встаёте? Ответ напишите в формате чч:мм.')
     await message.delete()
+    await state.set_state(FSMTown.reminder_time)
 
 
 async def load_timer_base(message: Message,
                           state: FSMContext):
     ''' Ловим ответ по времени для напоминания про зонтик. '''
-    await message.answer(f'Ваше время {message.text} успешно занесёно в базу.')
-    context_data = await state.get_data()
-
-    await state.clear()
-    # try:
-    #     async with state.proxy() as data:
-    #         data['timer'] = message.text
-    #     db.add_timer(message.from_user.id, message.text)
-    #     await state.finish()
-    #     await bot.send_message(message.from_user.id,
-    #                            'Ваше время успешно занесёно в базу.')
-    # except Exception as ex:
-    #     print(ex)
-    #     await bot.send_message(message.from_user.id,
-    #                            'Произошла ошибка при занесении в базу.')
+    try:
+        db = DataBase('users.db')
+        db.add_timer(message.from_user.id, message.text)
+        await message.answer(f'Ваше время {message.text} успешно занесёно в базу.')
+        await state.clear()
+    except Exception as ex:
+        print(ex)
+        await message.answer(f'Произошла ошибка при занесении в базу.')
 
 
-async def get_wish(message: Message):
+async def get_wish(message: Message,
+                   state: FSMContext):
     ''' Просит оставить пожелание разработчику. '''
-    await FSMWish.wish.set()
     await message.answer('Оставьте пожелание разработчику, если передумали напишите: отмена.')
     await message.delete()
+    await state.set_state(FSMWish.wish)
 
 
 async def load_wish_base(message: Message,
-                              state: FSMContext):
+                         bot: Bot,
+                         state: FSMContext):
     ''' Ловим ответ по пожеланию для разработчика. '''
-    try:
-        async with state.proxy() as data:
-            data['wish'] = message.text
-        await bot.send_message(DEV_ID,
-                               f'Пожелание от {message.from_user.first_name}: {message.text}')
-        await state.finish()
-        await bot.send_message(message.from_user.id,
-                               'Ваше пожелание отправлено разработчику.')
-    except Exception as ex:
-        print(ex)
-        await bot.send_message(message.from_user.id,
-                               'Произошла ошибка при отправке пожелания.')
+    await bot.send_message(DEV_ID,
+                           f'Пожелание от {message.from_user.first_name}: {message.text}')
+    await state.clear()
+    await message.answer(f'Ваше пожелание отправлено разработчику.')
+    
 
 # @dp.message_handler(commands=['Погода'])
 async def get_weather(message: Message):
+    db = DataBase('users.db')
     city = db.get_city(message.from_user.id)
     if city:
         try:
@@ -127,13 +98,11 @@ async def get_weather(message: Message):
             description = data['weather'][0]['main']
             tempreture = data['main']['temp']
             winds = data['wind']['speed']
-            await bot.send_message(message.from_user.id,
-                                f'погода в {city}\n'+
-                                f'Температура: {tempreture}C\n'+
-                                f'Скорость ветра: {winds} m/c\n{description}')
+            await message.answer(f'погода в {city}\n'+
+                                 f'Температура: {tempreture}C\n'+
+                                 f'Скорость ветра: {winds} m/c\n{description}')
             await message.delete()
         except Exception as ex:
             print(ex)
-            await bot.send_message(message.from_user.id,
-                                f'Проверьте название города.')
+            await message.answer(f'Проверьте название города.')
     
