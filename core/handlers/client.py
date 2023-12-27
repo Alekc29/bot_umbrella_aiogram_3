@@ -10,6 +10,8 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from main import API_KEY_WEATHER, DEV_ID
 from core.utils.data_base import DataBase
 from core.utils.class_fsm import FSMTown, FSMWish
+from core.utils.weather import check_weather
+from core.keyboards.inlinekey import geo
 
 router = Router()
 
@@ -17,21 +19,9 @@ router = Router()
 @router.message(Command('city'))
 async def get_town(message: Message, state: FSMContext):
     ''' Задать город для получения напоминания взять зонтик. '''
-    await message.answer('Напишите свой город.')
+    await message.answer('Напишите свой город.', reply_markup=geo)
     await message.delete()
     await state.set_state(FSMTown.town)
-    
-
-@router.message(Command('cancel'))
-async def cancel_handler(message: Message,
-                         state: FSMContext):
-    ''' Выход из машины состояний. '''
-    current_state = await state.get_state()
-    if current_state is None:
-        return
-    await state.clear()
-    await message.answer('Ok')
-    await message.delete()
 
 
 @router.message(FSMTown.town)
@@ -88,7 +78,7 @@ async def load_timer_base(message: Message,
 async def get_wish(message: Message,
                    state: FSMContext):
     ''' Просит оставить пожелание разработчику. '''
-    await message.answer('Оставьте пожелание разработчику, если передумали напишите: отмена.')
+    await message.answer('Оставьте пожелание разработчику, если передумали выберите в меню: отмена.')
     await message.delete()
     await state.set_state(FSMWish.wish)
 
@@ -105,13 +95,9 @@ async def load_wish_base(message: Message,
     
 
 async def send_reminder_umbrella(bot: Bot, chat_id: int):
-    await bot.send_message(chat_id, 'Возьми зонтик! Сегодня будет дождик!')
-
-
-@router.message(Command('weather'))
-async def get_weather(message: Message):
+    
     db = DataBase('users.db')
-    city = db.get_city(message.from_user.id)
+    city = db.get_city(chat_id)
     if city:
         try:
             req = requests.get(
@@ -120,12 +106,41 @@ async def get_weather(message: Message):
             data = req.json()
             description = data['weather'][0]['main']
             tempreture = data['main']['temp']
-            winds = data['wind']['speed']
-            await message.answer(f'погода в {city}\n'+
-                                 f'Температура: {tempreture}C\n'+
-                                 f'Скорость ветра: {winds} m/c\n{description}')
-            await message.delete()
+            if description == 'rain':
+                await bot.send_message(chat_id,
+                                       f'Возьми зонтик! Сегодня будет дождик!')
+            else:
+                await bot.send_message(chat_id,
+                                       f'Сегодня зонтик не пригодится! На улице {round(tempreture)} градусов.')
         except Exception as ex:
             print(ex)
-            await message.answer(f'Проверьте название города.')
+            await bot.send_message(chat_id,
+                                   f'Проверьте название города.')
+
+
+@router.message(Command('weather'))
+async def get_weather(message: Message):
+    try:
+        description, tempreture, wind, city = check_weather(message.from_user.id)
+        await message.answer(f'погода в {city}\n'+
+                             f'Температура: {tempreture}C\n'+
+                             f'Скорость ветра: {wind} m/c\n{description}')
+        await message.delete()
+    except Exception as ex:
+        print(ex)
+        await message.answer(f'Проверьте название города.')
     
+
+@router.message(Command('profile'))
+async def get_profile(message: Message):
+    db = DataBase('users.db')
+    try:
+        city = db.get_city(message.from_user.id)
+        time = db.get_timer(message.from_user.id)
+        await message.answer(f'{message.from_user.first_name}\n'+
+                             f'город: {city}\n'+
+                             f'время напоминания: {time}')
+        await message.delete()
+    except Exception as ex:
+        print(ex)
+        await message.answer(f'Произошла ошибка при обращении к базе.')

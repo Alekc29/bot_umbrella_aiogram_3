@@ -26,7 +26,7 @@ async def set_commands(bot: Bot):
         ),
         BotCommand(
             command='cancel',
-            description='Сбросить'
+            description='Отмена'
         ),
     ]
     await bot.set_my_commands(commands, BotCommandScopeDefault())

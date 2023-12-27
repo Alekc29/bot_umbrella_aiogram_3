@@ -1,6 +1,7 @@
 from aiogram import Bot, Router, F
 from aiogram.types import Message
 from aiogram.filters import Command
+from aiogram.fsm.context import FSMContext
 
 from core.utils.data_base import DataBase
 
@@ -12,8 +13,7 @@ async def get_start(message: Message, bot: Bot):
     db = DataBase('users.db')
     if not db.user_exists(message.from_user.id):
         db.add_user(message.from_user.id, message.from_user.first_name)
-    await bot.send_message(
-        message.from_user.id,
+    await message.answer(
         f'Привет! Я буду напоминать тебе брать зонтик в дождливую погоду.'
     )
 
@@ -26,5 +26,22 @@ async def get_photo(message: Message, bot: Bot):
 
 
 @router.message(F.text == 'Привет')
-async def get_hello(message: Message, bot: Bot):
+async def get_hello(message: Message):
     await message.answer(f'И тебе привет!')
+
+
+@router.message(Command('cancel'))
+async def cancel_handler(message: Message,
+                         state: FSMContext):
+    ''' Выход из машины состояний. '''
+    current_state = await state.get_state()
+    if current_state is None:
+        return
+    await state.clear()
+    await message.answer('Ok')
+    await message.delete()
+
+
+@router.message()
+async def get_echo(message: Message):
+    await message.answer(f'Такой команды я не знаю! В меню есть все доступные команды.')

@@ -40,8 +40,9 @@ async def start():
     dp.startup.register(start_bot)
     dp.shutdown.register(stop_bot)
     dp.include_routers(
+        client.router,
         basic.router,
-        client.router
+        
     )
     try:
         await dp.start_polling(bot)
