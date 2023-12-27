@@ -1,18 +1,15 @@
-import os
 import requests
 
-from dotenv import load_dotenv
+from datetime import datetime
 from aiogram import Bot, Router, F
 from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 from aiogram.types import Message
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
+from main import API_KEY_WEATHER, DEV_ID
 from core.utils.data_base import DataBase
 from core.utils.class_fsm import FSMTown, FSMWish
-
-load_dotenv()
-API_KEY_WEATHER = os.getenv('API_KEY_WEATHER')
-DEV_ID = os.getenv('DEV_ID')
 
 router = Router()
 
@@ -65,13 +62,23 @@ async def get_time(message: Message,
 
 @router.message(FSMTown.reminder_time)
 async def load_timer_base(message: Message,
-                          state: FSMContext):
+                          state: FSMContext,
+                          apscheduler: AsyncIOScheduler,
+                          bot: Bot):
     ''' Ловим ответ по времени для напоминания про зонтик. '''
     try:
         db = DataBase('users.db')
         db.add_timer(message.from_user.id, message.text)
         await message.answer(f'Ваше время {message.text} успешно занесёно в базу.')
         await state.clear()
+        hours, minutes = message.text.split(':')
+        apscheduler.add_job(send_reminder_umbrella,
+                            trigger='cron',
+                            hour=int(hours),
+                            minute=int(minutes),
+                            start_date=datetime.now(),
+                            kwargs={'bot': bot,
+                                    'chat_id': message.from_user.id})
     except Exception as ex:
         print(ex)
         await message.answer(f'Произошла ошибка при занесении в базу.')
@@ -96,6 +103,10 @@ async def load_wish_base(message: Message,
     await state.clear()
     await message.answer(f'Ваше пожелание отправлено разработчику.')
     
+
+async def send_reminder_umbrella(bot: Bot, chat_id: int):
+    await bot.send_message(chat_id, 'Возьми зонтик! Сегодня будет дождик!')
+
 
 @router.message(Command('weather'))
 async def get_weather(message: Message):

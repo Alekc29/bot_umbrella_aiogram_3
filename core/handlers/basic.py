@@ -7,7 +7,7 @@ from core.utils.data_base import DataBase
 router = Router()
 
 
-@router.message(Command(commands=['start', 'run']))
+@router.message(Command(commands=['start', 'run', 'help']))
 async def get_start(message: Message, bot: Bot):
     db = DataBase('users.db')
     if not db.user_exists(message.from_user.id):

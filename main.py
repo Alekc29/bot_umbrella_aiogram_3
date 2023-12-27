@@ -5,12 +5,16 @@ import contextlib
 
 from aiogram import Bot, Dispatcher
 from dotenv import load_dotenv
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
+from datetime import datetime
 
 from core.handlers import basic, client
 from core.utils.commands import set_commands
+from core.utils.apschedulermiddleware import SchedulerMiddleware
 
 load_dotenv()
 
+API_KEY_WEATHER = os.getenv('API_KEY_WEATHER')
 BOT_TOKEN = os.getenv('BOT_TOKEN')
 DEV_ID = os.getenv('DEV_ID')
 
@@ -30,6 +34,9 @@ async def start():
                                "(%(filename)s).%(funcName)s(%(lineno)d) - %(message)s")
     bot = Bot(token=BOT_TOKEN, parse_mode='HTML')
     dp = Dispatcher()
+    scheduler = AsyncIOScheduler(timezone='Europe/Moscow')
+    scheduler.start()
+    dp.update.middleware.register(SchedulerMiddleware(scheduler))
     dp.startup.register(start_bot)
     dp.shutdown.register(stop_bot)
     dp.include_routers(
