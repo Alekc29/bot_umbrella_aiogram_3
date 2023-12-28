@@ -30,16 +30,12 @@ async def get_hello(message: Message):
     await message.answer(f'И тебе привет!')
 
 
-@router.message(Command('cancel'))
-async def cancel_handler(message: Message,
-                         state: FSMContext):
-    ''' Выход из машины состояний. '''
-    current_state = await state.get_state()
-    if current_state is None:
-        return
-    await state.clear()
-    await message.answer('Ok')
-    await message.delete()
+# @router.message(content_types=['location',])
+# async def handle_location(message: Message):
+#     # Извлекаем геолокацию из сообщения
+#     lat = message.location.latitude
+#     lon = message.location.longitude
+#     await message.answer(f'Геолокация: {lat} {lon}.')
 
 
 @router.message()

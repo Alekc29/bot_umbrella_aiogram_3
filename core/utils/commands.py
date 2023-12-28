@@ -25,6 +25,10 @@ async def set_commands(bot: Bot):
             description='Пожелание разработчику'
         ),
         BotCommand(
+            command='weather',
+            description='Узнать погоду сейчас'
+        ),
+        BotCommand(
             command='cancel',
             description='Отмена'
         ),

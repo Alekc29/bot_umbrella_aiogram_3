@@ -1,5 +1,3 @@
-import requests
-
 from datetime import datetime
 from aiogram import Bot, Router, F
 from aiogram.filters import Command
@@ -7,7 +5,7 @@ from aiogram.fsm.context import FSMContext
 from aiogram.types import Message
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
-from main import API_KEY_WEATHER, DEV_ID
+from main import DEV_ID
 from core.utils.data_base import DataBase
 from core.utils.class_fsm import FSMTown, FSMWish
 from core.utils.weather import check_weather
@@ -19,12 +17,25 @@ router = Router()
 @router.message(Command('city'))
 async def get_town(message: Message, state: FSMContext):
     ''' Задать город для получения напоминания взять зонтик. '''
-    await message.answer('Напишите свой город.', reply_markup=geo)
+    await message.answer('Напишите свой город или отправьте геолокацию.',
+                         reply_markup=geo)
     await message.delete()
     await state.set_state(FSMTown.town)
 
 
-@router.message(FSMTown.town)
+@router.message(Command('cancel'))
+async def cancel_handler(message: Message,
+                         state: FSMContext):
+    ''' Выход из машины состояний. '''
+    current_state = await state.get_state()
+    if current_state is None:
+        return
+    await state.clear()
+    await message.answer('Ok')
+    await message.delete()
+
+
+@router.message(FSMTown.town, )
 async def load_town_base(message: Message,
                          state: FSMContext):
     ''' Ловим ответ по городу для напоминания про зонтик. '''
@@ -95,35 +106,29 @@ async def load_wish_base(message: Message,
     
 
 async def send_reminder_umbrella(bot: Bot, chat_id: int):
-    
-    db = DataBase('users.db')
-    city = db.get_city(chat_id)
-    if city:
-        try:
-            req = requests.get(
-                f'https://api.openweathermap.org/data/2.5/weather?q={city}&appid={API_KEY_WEATHER}&units=metric'
-            )
-            data = req.json()
-            description = data['weather'][0]['main']
-            tempreture = data['main']['temp']
-            if description == 'rain':
-                await bot.send_message(chat_id,
-                                       f'Возьми зонтик! Сегодня будет дождик!')
-            else:
-                await bot.send_message(chat_id,
-                                       f'Сегодня зонтик не пригодится! На улице {round(tempreture)} градусов.')
-        except Exception as ex:
-            print(ex)
+    ''' Проверяет идёт ли дождь и отправляет сообщение напоминание. '''
+    try:
+        description, tempreture, wind, city = await check_weather(chat_id)
+        if description == 'rain':
             await bot.send_message(chat_id,
-                                   f'Проверьте название города.')
+                                   f'Возьми зонтик! Сегодня будет дождик!')
+        else:
+            await bot.send_message(chat_id,
+                                   f'Сегодня зонтик не пригодится!\n' +
+                                   f'На улице {tempreture} градусов.')
+    except Exception as ex:
+        print(ex)
+        await bot.send_message(chat_id,
+                               f'Проверьте название города.')
 
 
 @router.message(Command('weather'))
 async def get_weather(message: Message):
+    ''' Показывает текущюю погоду. '''
     try:
-        description, tempreture, wind, city = check_weather(message.from_user.id)
+        description, tempreture, wind, city = await check_weather(message.from_user.id)
         await message.answer(f'погода в {city}\n'+
-                             f'Температура: {tempreture}C\n'+
+                             f'Температура: {tempreture} C\n'+
                              f'Скорость ветра: {wind} m/c\n{description}')
         await message.delete()
     except Exception as ex:
@@ -133,6 +138,7 @@ async def get_weather(message: Message):
 
 @router.message(Command('profile'))
 async def get_profile(message: Message):
+    ''' Выдаёт информацию из базы пользователю. '''
     db = DataBase('users.db')
     try:
         city = db.get_city(message.from_user.id)
