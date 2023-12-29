@@ -10,9 +10,11 @@ class DataBase:
     def create_db(self):
         try:
             query = ('CREATE TABLE IF NOT EXISTS users('
-                     'user_id TEXT PRIMARY KEY,'
+                     'user_id INTEGER PRIMARY KEY,'
                      'user_name TEXT,'
                      'city TEXT,'
+                     'lat FLOAT,'
+                     'lon FLOAT,'
                      'reminder_time TEXT);')
             self.cur.execute(query)
             self.connection.commit()
@@ -33,7 +35,13 @@ class DataBase:
             ''', (user_id,)).fetchall()
             return bool(len(result))
         
-    def add_user(self, user_id, user_name, city=None, reminder_time=None):
+    def add_user(self,
+                 user_id,
+                 user_name,
+                 city=None,
+                 lat=None,
+                 lon=None,
+                 reminder_time=None):
         ''' Создаёт нового пользователя. '''
         with self.connection:
             return self.cur.execute('''
@@ -50,6 +58,15 @@ class DataBase:
                 WHERE user_id = ?;
             ''', (town, user_id,))
         
+    def add_geo(self, user_id, lat, lon):
+        ''' Изменяет геолокацию для прогноза. '''
+        with self.connection:
+            return self.cur.execute('''
+                UPDATE users 
+                SET lat = ?, lon = ?
+                WHERE user_id = ?;
+            ''', (lat, lon, user_id,))
+
     def add_timer(self, user_id, reminder_time):
         ''' Изменяет время напоминания. '''
         with self.connection:
@@ -74,6 +91,15 @@ class DataBase:
                 FROM users
                 WHERE user_id = ?;
             ''', (user_id,)).fetchone()[0]
+    
+    def get_geo(self, user_id):
+        ''' Выдаёт геолокацию из базы по id. '''
+        with self.connection:
+            return self.cur.execute('''
+                SELECT lat, lon
+                FROM users
+                WHERE user_id = ?;
+            ''', (user_id,)).fetchone()
         
     def get_timer(self, user_id):
         ''' Выдаёт время из базы по id. '''

@@ -35,21 +35,31 @@ async def cancel_handler(message: Message,
     await message.delete()
 
 
-@router.message(FSMTown.town, )
+@router.message(FSMTown.town)
 async def load_town_base(message: Message,
                          state: FSMContext):
     ''' Ловим ответ по городу для напоминания про зонтик. '''
-    try:
+    if message.location:
         db = DataBase('users.db')
-        db.add_city(message.from_user.id, message.text)
-        await message.answer(f'Ваш город {message.text} успешно занесён в базу.'
+        db.add_geo(message.from_user.id,
+                round(message.location.latitude, 2),
+                round(message.location.longitude, 2))
+        await message.answer(f'Ваша геолокация успешно занесена в базу.\n'
                              f'Теперь введите время напоминания в формате чч:мм.')
+        db.add_city(message.from_user.id, message.text)
         await state.update_data(town=message.text)
         await state.set_state(FSMTown.reminder_time)
-    except Exception as ex:
-        print(ex)
-        await message.answer(message.from_user.id,
-                             'Произошла ошибка при занесении в базу.')
+    else:
+        try:
+            db = DataBase('users.db')
+            db.add_city(message.from_user.id, message.text)
+            await message.answer(f'Ваш город {message.text} успешно занесён в базу.\n'
+                                 f'Теперь введите время напоминания в формате чч:мм.')
+            await state.update_data(town=message.text)
+            await state.set_state(FSMTown.reminder_time)
+        except Exception as ex:
+            print(ex)
+            await message.answer('Произошла ошибка при занесении в базу.')
 
 
 @router.message(Command('time'))
@@ -89,7 +99,8 @@ async def load_timer_base(message: Message,
 async def get_wish(message: Message,
                    state: FSMContext):
     ''' Просит оставить пожелание разработчику. '''
-    await message.answer('Оставьте пожелание разработчику, если передумали выберите в меню: отмена.')
+    await message.answer('Оставьте пожелание разработчику,'
+                         'если передумали выберите в меню: отмена.')
     await message.delete()
     await state.set_state(FSMWish.wish)
 
@@ -127,7 +138,7 @@ async def get_weather(message: Message):
     ''' Показывает текущюю погоду. '''
     try:
         description, tempreture, wind, city = await check_weather(message.from_user.id)
-        await message.answer(f'погода в {city}\n'+
+        await message.answer(f'погода в городе: {city}\n'+
                              f'Температура: {tempreture} C\n'+
                              f'Скорость ветра: {wind} m/c\n{description}')
         await message.delete()
