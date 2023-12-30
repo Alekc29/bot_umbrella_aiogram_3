@@ -11,7 +11,7 @@ from main import DEV_ID
 from core.utils.data_base import DataBase
 from core.utils.class_fsm import FSMTown, FSMWish
 from core.utils.weather import check_weather
-from core.keyboards.inlinekey import geo
+from core.keyboards.replykey import geo
 
 router = Router()
 
@@ -47,7 +47,7 @@ async def load_town_base(message: Message,
                    round(message.location.latitude, 2),
                    round(message.location.longitude, 2))
         await message.answer(f'Ваша геолокация успешно занесена в базу.\n'
-                             f'Теперь введите время напоминания в формате чч:мм.',
+                             f'Теперь введите время напоминания в формате <u>чч:мм</u>.',
                              reply_markup=ReplyKeyboardRemove())
         db.add_city(message.from_user.id, message.text)
         await state.update_data(town=message.text)
@@ -61,9 +61,8 @@ async def load_town_base(message: Message,
                 db = DataBase('users.db')
                 db.add_city(message.from_user.id, message.text.title())
                 await message.answer(f'Ваш город <b><u>{message.text.title()}</u></b> успешно занесён в базу.\n'
-                                     f'Теперь введите время напоминания в формате чч:мм.',
+                                     f'Теперь введите время напоминания в формате <u>чч:мм</u>.',
                                      reply_markup=ReplyKeyboardRemove())
-                await state.update_data(town=message.text)
                 await state.set_state(FSMTown.reminder_time)
             else:
                 await message.answer('Произошла ошибка убедитесь, что название города верно написано.\n'
@@ -78,7 +77,7 @@ async def load_town_base(message: Message,
 async def get_time(message: Message,
                    state: FSMContext):
     ''' Задать время для получения напоминания взять зонтик. '''
-    await message.answer('В какое время вы встаёте? Ответ напишите в формате чч:мм.')
+    await message.answer('В какое время вы встаёте? Ответ напишите в формате <u>чч:мм</u>.')
     await message.delete()
     await state.set_state(FSMTown.reminder_time)
 
@@ -98,7 +97,7 @@ async def load_timer_base(message: Message,
             hours, minutes = text.split(':')
             db = DataBase('users.db')
             db.add_timer(message.from_user.id, text)
-            await message.answer(f'Ваше время {text} успешно занесёно в базу.')
+            await message.answer(f'Ваше время <u>{text}</u> успешно занесёно в базу.')
             await state.clear()
             apscheduler.add_job(send_reminder_umbrella,
                                 trigger='cron',

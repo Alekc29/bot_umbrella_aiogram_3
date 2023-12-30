@@ -8,3 +8,7 @@ class FSMTown(StatesGroup):
 
 class FSMWish(StatesGroup):
     wish = State()
+
+
+class FSMPost(StatesGroup):
+    post = State()

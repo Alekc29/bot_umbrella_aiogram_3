@@ -7,7 +7,7 @@ from aiogram import Bot, Dispatcher
 from dotenv import load_dotenv
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
-from core.handlers import basic, client
+from core.handlers import basic, client, admin
 from core.utils.commands import set_commands
 from core.utils.apschedulermiddleware import SchedulerMiddleware
 
@@ -39,6 +39,7 @@ async def start():
     dp.startup.register(start_bot)
     dp.shutdown.register(stop_bot)
     dp.include_routers(
+        admin.router,
         client.router,
         basic.router,
     )
