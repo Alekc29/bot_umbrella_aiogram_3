@@ -116,6 +116,3 @@ class DataBase:
                 SELECT COUNT('user_id') as count 
                 FROM users;
             ''').fetchone()[0]
-
-
-

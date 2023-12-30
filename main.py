@@ -6,7 +6,6 @@ import contextlib
 from aiogram import Bot, Dispatcher
 from dotenv import load_dotenv
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
-from datetime import datetime
 
 from core.handlers import basic, client
 from core.utils.commands import set_commands
@@ -42,7 +41,6 @@ async def start():
     dp.include_routers(
         client.router,
         basic.router,
-        
     )
     try:
         await dp.start_polling(bot)

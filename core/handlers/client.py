@@ -1,8 +1,10 @@
+import re
+
 from datetime import datetime
 from aiogram import Bot, Router, F
 from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
-from aiogram.types import Message
+from aiogram.types import Message, ReplyKeyboardRemove
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
 from main import DEV_ID
@@ -31,7 +33,7 @@ async def cancel_handler(message: Message,
     if current_state is None:
         return
     await state.clear()
-    await message.answer('Ok')
+    await message.answer('Ok', reply_markup=ReplyKeyboardRemove())
     await message.delete()
 
 
@@ -42,24 +44,34 @@ async def load_town_base(message: Message,
     if message.location:
         db = DataBase('users.db')
         db.add_geo(message.from_user.id,
-                round(message.location.latitude, 2),
-                round(message.location.longitude, 2))
+                   round(message.location.latitude, 2),
+                   round(message.location.longitude, 2))
         await message.answer(f'Ваша геолокация успешно занесена в базу.\n'
-                             f'Теперь введите время напоминания в формате чч:мм.')
+                             f'Теперь введите время напоминания в формате чч:мм.',
+                             reply_markup=ReplyKeyboardRemove())
         db.add_city(message.from_user.id, message.text)
         await state.update_data(town=message.text)
         await state.set_state(FSMTown.reminder_time)
     else:
         try:
-            db = DataBase('users.db')
-            db.add_city(message.from_user.id, message.text)
-            await message.answer(f'Ваш город {message.text} успешно занесён в базу.\n'
-                                 f'Теперь введите время напоминания в формате чч:мм.')
-            await state.update_data(town=message.text)
-            await state.set_state(FSMTown.reminder_time)
+            text = message.text.lower()
+            pattern = r'[A-Za-zа-яё]+( [A-Za-zа-яё]+)*'
+            city_good = re.fullmatch(pattern, text)
+            if city_good:
+                db = DataBase('users.db')
+                db.add_city(message.from_user.id, message.text.title())
+                await message.answer(f'Ваш город <b><u>{message.text.title()}</u></b> успешно занесён в базу.\n'
+                                     f'Теперь введите время напоминания в формате чч:мм.',
+                                     reply_markup=ReplyKeyboardRemove())
+                await state.update_data(town=message.text)
+                await state.set_state(FSMTown.reminder_time)
+            else:
+                await message.answer('Произошла ошибка убедитесь, что название города верно написано.\n'
+                                     'Повторите попытку ввода или отправьте геолокацию.')
         except Exception as ex:
             print(ex)
-            await message.answer('Произошла ошибка при занесении в базу.')
+            await message.answer('Произошла ошибка при занесении в базу.',
+                                 reply_markup=ReplyKeyboardRemove())
 
 
 @router.message(Command('time'))
@@ -78,18 +90,25 @@ async def load_timer_base(message: Message,
                           bot: Bot):
     ''' Ловим ответ по времени для напоминания про зонтик. '''
     try:
-        db = DataBase('users.db')
-        db.add_timer(message.from_user.id, message.text)
-        await message.answer(f'Ваше время {message.text} успешно занесёно в базу.')
-        await state.clear()
-        hours, minutes = message.text.split(':')
-        apscheduler.add_job(send_reminder_umbrella,
-                            trigger='cron',
-                            hour=int(hours),
-                            minute=int(minutes),
-                            start_date=datetime.now(),
-                            kwargs={'bot': bot,
-                                    'chat_id': message.from_user.id})
+        text = message.text
+        pattern = r'\d{2}\W\d{2}'
+        time_good = re.fullmatch(pattern, text)
+        if time_good:
+            text = text.replace(text[2], ':')
+            hours, minutes = text.split(':')
+            db = DataBase('users.db')
+            db.add_timer(message.from_user.id, text)
+            await message.answer(f'Ваше время {text} успешно занесёно в базу.')
+            await state.clear()
+            apscheduler.add_job(send_reminder_umbrella,
+                                trigger='cron',
+                                hour=int(hours),
+                                minute=int(minutes),
+                                start_date=datetime.now(),
+                                kwargs={'bot': bot,
+                                        'chat_id': message.from_user.id})
+        else:
+            await message.answer(f'Время напоминания введено некорректно! Повторите попытку.')
     except Exception as ex:
         print(ex)
         await message.answer(f'Произошла ошибка при занесении в базу.')

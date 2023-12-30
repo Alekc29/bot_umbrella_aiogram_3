@@ -5,14 +5,6 @@ from aiogram.types import BotCommand, BotCommandScopeDefault
 async def set_commands(bot: Bot):
     commands = [
         BotCommand(
-            command='profile',
-            description='Ваш профиль'
-        ),
-        BotCommand(
-            command='help',
-            description='Помощь'
-        ),
-        BotCommand(
             command='city',
             description='Задать город'
         ),
@@ -21,12 +13,20 @@ async def set_commands(bot: Bot):
             description='Задать время напоминания'
         ),
         BotCommand(
+            command='weather',
+            description='Узнать погоду сейчас'
+        ),
+        BotCommand(
+            command='profile',
+            description='Ваш профиль'
+        ),
+        BotCommand(
             command='wish',
             description='Пожелание разработчику'
         ),
         BotCommand(
-            command='weather',
-            description='Узнать погоду сейчас'
+            command='help',
+            description='Помощь'
         ),
         BotCommand(
             command='cancel',
