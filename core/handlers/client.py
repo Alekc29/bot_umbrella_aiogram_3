@@ -1,17 +1,17 @@
 import re
 
-from datetime import datetime
-from aiogram import Bot, Router, F
+from aiogram import Bot, Router
 from aiogram.filters import Command
-from aiogram.fsm.context import FSMContext
 from aiogram.types import Message, ReplyKeyboardRemove
+from aiogram.fsm.context import FSMContext
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
+from datetime import datetime
 
 from main import DEV_ID
+from core.keyboards.replykey import geo
 from core.utils.data_base import DataBase
 from core.utils.class_fsm import FSMTown, FSMWish
 from core.utils.weather import check_weather
-from core.keyboards.replykey import geo
 
 router = Router()
 
@@ -46,9 +46,11 @@ async def load_town_base(message: Message,
         db.add_geo(message.from_user.id,
                    round(message.location.latitude, 2),
                    round(message.location.longitude, 2))
-        await message.answer(f'Ваша геолокация успешно занесена в базу.\n'
-                             f'Теперь введите время напоминания в формате <u>чч:мм</u>.',
-                             reply_markup=ReplyKeyboardRemove())
+        await message.answer(
+            'Ваша геолокация успешно занесена в базу.\n'
+            'Теперь введите время напоминания в формате <u>чч:мм</u>.',
+            reply_markup=ReplyKeyboardRemove()
+        )
         db.add_city(message.from_user.id, message.text)
         await state.update_data(town=message.text)
         await state.set_state(FSMTown.reminder_time)
@@ -60,13 +62,17 @@ async def load_town_base(message: Message,
             if city_good:
                 db = DataBase('users.db')
                 db.add_city(message.from_user.id, message.text.title())
-                await message.answer(f'Ваш город <b><u>{message.text.title()}</u></b> успешно занесён в базу.\n'
-                                     f'Теперь введите время напоминания в формате <u>чч:мм</u>.',
-                                     reply_markup=ReplyKeyboardRemove())
+                await message.answer(
+                    f'Ваш город <b><u>{message.text.title()}</u></b> успешно занесён в базу.\n'
+                    'Теперь введите время напоминания в формате <u>чч:мм</u>.',
+                    reply_markup=ReplyKeyboardRemove()
+                )
                 await state.set_state(FSMTown.reminder_time)
             else:
-                await message.answer('Произошла ошибка убедитесь, что название города верно написано.\n'
-                                     'Повторите попытку ввода или отправьте геолокацию.')
+                await message.answer(
+                    'Произошла ошибка убедитесь, что название города верно написано.\n'
+                    'Повторите попытку ввода или отправьте геолокацию.'
+                )
         except Exception as ex:
             print(ex)
             await message.answer('Произошла ошибка при занесении в базу.',
@@ -77,7 +83,9 @@ async def load_town_base(message: Message,
 async def get_time(message: Message,
                    state: FSMContext):
     ''' Задать время для получения напоминания взять зонтик. '''
-    await message.answer('В какое время вы встаёте? Ответ напишите в формате <u>чч:мм</u>.')
+    await message.answer(
+        'В какое время вы встаёте? Ответ напишите в формате <u>чч:мм</u>.'
+    )
     await message.delete()
     await state.set_state(FSMTown.reminder_time)
 
@@ -97,7 +105,9 @@ async def load_timer_base(message: Message,
             hours, minutes = text.split(':')
             db = DataBase('users.db')
             db.add_timer(message.from_user.id, text)
-            await message.answer(f'Ваше время <u>{text}</u> успешно занесёно в базу.')
+            await message.answer(
+                f'Ваше время <u>{text}</u> успешно занесёно в базу.'
+            )
             await state.clear()
             apscheduler.add_job(send_reminder_umbrella,
                                 trigger='cron',
@@ -107,10 +117,12 @@ async def load_timer_base(message: Message,
                                 kwargs={'bot': bot,
                                         'chat_id': message.from_user.id})
         else:
-            await message.answer(f'Время напоминания введено некорректно! Повторите попытку.')
+            await message.answer(
+                'Время напоминания введено некорректно! Повторите попытку.'
+            )
     except Exception as ex:
         print(ex)
-        await message.answer(f'Произошла ошибка при занесении в базу.')
+        await message.answer('Произошла ошибка при занесении в базу.')
 
 
 @router.message(Command('wish'))
@@ -128,11 +140,14 @@ async def load_wish_base(message: Message,
                          bot: Bot,
                          state: FSMContext):
     ''' Ловим ответ по пожеланию для разработчика. '''
-    await bot.send_message(DEV_ID,
-                           f'Пожелание от {message.from_user.first_name}: {message.text}')
+    await bot.send_message(
+        DEV_ID,
+        f'Пожелание от {message.from_user.first_name}: {message.text}'
+    )
     await state.clear()
-    await message.answer(f'Ваше пожелание отправлено разработчику.')
-    
+    await message.answer('Ваше пожелание отправлено разработчику.')
+    await message.delete()
+
 
 async def send_reminder_umbrella(bot: Bot, chat_id: int):
     ''' Проверяет идёт ли дождь и отправляет сообщение напоминание. '''
@@ -140,30 +155,32 @@ async def send_reminder_umbrella(bot: Bot, chat_id: int):
         description, tempreture, wind, city = await check_weather(chat_id)
         if description == 'rain':
             await bot.send_message(chat_id,
-                                   f'Возьми зонтик! Сегодня будет дождик!')
+                                   'Возьми зонтик! Сегодня будет дождик!')
         else:
             await bot.send_message(chat_id,
-                                   f'Сегодня зонтик не пригодится!\n' +
+                                   'Сегодня зонтик не пригодится!\n' +
                                    f'На улице {tempreture} градусов.')
     except Exception as ex:
         print(ex)
         await bot.send_message(chat_id,
-                               f'Проверьте название города.')
+                               'Проверьте название города.')
 
 
 @router.message(Command('weather'))
 async def get_weather(message: Message):
     ''' Показывает текущюю погоду. '''
     try:
-        description, tempreture, wind, city = await check_weather(message.from_user.id)
-        await message.answer(f'погода в городе: {city}\n'+
-                             f'Температура: {tempreture} C\n'+
+        description, tempreture, wind, city = await check_weather(
+            message.from_user.id
+        )
+        await message.answer(f'погода в городе: {city}\n'
+                             f'Температура: {tempreture} C\n'
                              f'Скорость ветра: {wind} m/c\n{description}')
         await message.delete()
     except Exception as ex:
         print(ex)
-        await message.answer(f'Проверьте название города.')
-    
+        await message.answer('Проверьте название города.')
+
 
 @router.message(Command('profile'))
 async def get_profile(message: Message):
@@ -172,10 +189,10 @@ async def get_profile(message: Message):
     try:
         city = db.get_city(message.from_user.id)
         time = db.get_timer(message.from_user.id)
-        await message.answer(f'{message.from_user.first_name}\n'+
-                             f'город: {city}\n'+
+        await message.answer(f'{message.from_user.first_name}\n'
+                             f'город: {city}\n'
                              f'время напоминания: {time}')
         await message.delete()
     except Exception as ex:
         print(ex)
-        await message.answer(f'Произошла ошибка при обращении к базе.')
+        await message.answer('Произошла ошибка при обращении к базе.')

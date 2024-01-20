@@ -1,15 +1,15 @@
 import asyncio
+import contextlib
 import logging
 import os
-import contextlib
 
 from aiogram import Bot, Dispatcher
 from dotenv import load_dotenv
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
-from core.handlers import basic, client, admin
-from core.utils.commands import set_commands
+from core.handlers import admin, basic, client
 from core.utils.apschedulermiddleware import SchedulerMiddleware
+from core.utils.commands import set_commands
 
 load_dotenv()
 
@@ -28,9 +28,11 @@ async def stop_bot(bot: Bot):
 
 
 async def start():
-    logging.basicConfig(level=logging.INFO,
-                        format="%(asctime)s - [%(levelname)s] - %(name)s - "
-                               "(%(filename)s).%(funcName)s(%(lineno)d) - %(message)s")
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s - [%(levelname)s] - %(name)s - "
+               "(%(filename)s).%(funcName)s(%(lineno)d) - %(message)s"
+    )
     bot = Bot(token=BOT_TOKEN, parse_mode='HTML')
     dp = Dispatcher()
     scheduler = AsyncIOScheduler(timezone='Europe/Moscow')
@@ -39,13 +41,13 @@ async def start():
     dp.startup.register(start_bot)
     dp.shutdown.register(stop_bot)
     dp.include_routers(
-        admin.router,
         client.router,
+        admin.router,
         basic.router,
     )
     try:
         await dp.start_polling(bot)
-    except Exception as ex: 
+    except Exception as ex:
         logging.error(f'Exception - {ex}', exc_info=True)
     finally:
         await bot.session.close()

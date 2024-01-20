@@ -1,0 +1,4 @@
+venv
+users.db
+.git
+__pycache__

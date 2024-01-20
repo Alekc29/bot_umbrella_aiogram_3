@@ -36,17 +36,6 @@ async def mailing_post_bot(message: Message, state: FSMContext):
         await state.set_state(FSMPost.post)
 
 
-# Выход из состояний
-# async def cancel_handler(message: types.Message,
-#                          state: FSMContext):
-#     if message.from_user.id == ID:
-#         current_state = await state.get_state()
-#         if current_state is None:
-#             return
-#         await state.finish()
-#         await message.reply('Ok')
-
-
 async def send_message_to_users(users, message: Message, bot: Bot):
     ''' функция для рассылки сообщения по списку пользователей '''
     for user in users:
@@ -55,7 +44,7 @@ async def send_message_to_users(users, message: Message, bot: Bot):
                                    f'{message.text}')
         except Exception as e:
             await bot.send_message(DEV_ID,
-                                   f'Произошла ошибка при отправке сообщения юзеру: {user}')
+                                   f'Произошла ошибка при отправке сообщения юзеру: {user[0]}')
 
 
 @router.message(FSMPost.post)
