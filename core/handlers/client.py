@@ -1,17 +1,17 @@
 import re
+from datetime import datetime
 
 from aiogram import Bot, Router
 from aiogram.filters import Command
-from aiogram.types import Message, ReplyKeyboardRemove
 from aiogram.fsm.context import FSMContext
+from aiogram.types import Message, ReplyKeyboardRemove
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
-from datetime import datetime
 
-from main import DEV_ID
 from core.keyboards.replykey import geo
-from core.utils.data_base import DataBase
 from core.utils.class_fsm import FSMTown, FSMWish
+from core.utils.data_base import DataBase
 from core.utils.weather import check_weather
+from main import DEV_ID
 
 router = Router()
 
@@ -63,14 +63,16 @@ async def load_town_base(message: Message,
                 db = DataBase('users.db')
                 db.add_city(message.from_user.id, message.text.title())
                 await message.answer(
-                    f'Ваш город <b><u>{message.text.title()}</u></b> успешно занесён в базу.\n'
+                    f'Ваш город <b><u>{message.text.title()}</u></b>'
+                    'успешно занесён в базу.\n'
                     'Теперь введите время напоминания в формате <u>чч:мм</u>.',
                     reply_markup=ReplyKeyboardRemove()
                 )
                 await state.set_state(FSMTown.reminder_time)
             else:
                 await message.answer(
-                    'Произошла ошибка убедитесь, что название города верно написано.\n'
+                    'Произошла ошибка убедитесь,'
+                    'что название города верно написано.\n'
                     'Повторите попытку ввода или отправьте геолокацию.'
                 )
         except Exception as ex:

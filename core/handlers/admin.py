@@ -1,14 +1,14 @@
 import os
 
-from dotenv import load_dotenv
-from aiogram import Bot, Router, F
+from aiogram import Bot, Router
 from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 from aiogram.types import Message, ReplyKeyboardRemove
+from dotenv import load_dotenv
 
-from core.utils.data_base import DataBase
-from core.utils.class_fsm import FSMPost
 from core.keyboards.replykey import admin
+from core.utils.class_fsm import FSMPost
+from core.utils.data_base import DataBase
 
 load_dotenv()
 
@@ -24,7 +24,7 @@ async def get_admin_keyboards(message: Message):
                              reply_markup=admin)
         await message.delete()
     else:
-        await message.answer(f'Вы не являетесь администратором бота.')
+        await message.answer('Вы не являетесь администратором бота.')
         await message.delete()
 
 
@@ -42,9 +42,11 @@ async def send_message_to_users(users, message: Message, bot: Bot):
         try:
             await bot.send_message(user[0],
                                    f'{message.text}')
-        except Exception as e:
-            await bot.send_message(DEV_ID,
-                                   f'Произошла ошибка при отправке сообщения юзеру: {user[0]}')
+        except Exception:
+            await bot.send_message(
+                DEV_ID,
+                f'Произошла ошибка при отправке сообщения юзеру: {user[0]}'
+            )
 
 
 @router.message(FSMPost.post)
@@ -68,10 +70,10 @@ async def get_statistics(message: Message):
         await message.answer(f'Кол-во юзеров: {db.count_all_users()}')
         await message.delete()
 
-     
+
 @router.message(Command('Клиент'))
 async def change_client_command(message: Message):
     if message.from_user.id == DEV_ID:
-        await message.answer(f'Вы перешли в клиентскую часть.',
+        await message.answer('Вы перешли в клиентскую часть.',
                              reply_markup=ReplyKeyboardRemove())
         await message.delete()

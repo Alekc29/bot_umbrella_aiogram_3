@@ -4,8 +4,8 @@ import logging
 import os
 
 from aiogram import Bot, Dispatcher
-from dotenv import load_dotenv
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
+from dotenv import load_dotenv
 
 from core.handlers import admin, basic, client
 from core.utils.apschedulermiddleware import SchedulerMiddleware
