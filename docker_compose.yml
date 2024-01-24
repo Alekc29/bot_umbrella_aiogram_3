@@ -4,6 +4,5 @@ services:
   bot_umbrella:
     image: alekc029/bot_umbrella:latest
     build: .
-    command: sh -C "python -m main"
     env_file: .env
     restart: always
