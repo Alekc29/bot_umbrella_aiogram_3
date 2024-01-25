@@ -1,7 +1,7 @@
 import re
 from datetime import datetime
 
-from aiogram import Bot, Router, F
+from aiogram import Bot, F, Router
 from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 from aiogram.types import Message, ReplyKeyboardRemove
@@ -131,7 +131,7 @@ async def load_timer_base(message: Message,
                                     'chat_id': message.from_user.id})
     except Exception as ex:
         print(ex)
-        await message.answer('Произошла ошибка при подключении таймера.')    
+        await message.answer('Произошла ошибка при подключении таймера.')
 
 
 @router.message(F.text == 'Пожелание')
@@ -209,11 +209,12 @@ async def get_profile(message: Message, bot: Bot):
 
 
 @router.message(Command('off'))
-async def get_profile(message: Message, bot: Bot, apscheduler: AsyncIOScheduler,):
+async def off_reminder(message: Message,
+                       bot: Bot,
+                       apscheduler: AsyncIOScheduler,):
     ''' Выключает напоминание. '''
     db = DataBase('users.db')
     try:
-        
         db.add_timer(message.from_user.id, None)
         await message.answer('Напоминание успешно отключено.')
         await message.delete()
@@ -224,4 +225,6 @@ async def get_profile(message: Message, bot: Bot, apscheduler: AsyncIOScheduler,
         apscheduler.remove_job(job_id=str(message.from_user.id))
     except Exception as ex:
         print(ex)
-        await message.answer('Произошла ошибка при удалении таймера напоминания.')
+        await message.answer(
+            'Произошла ошибка при удалении таймера напоминания.'
+        )
