@@ -9,17 +9,17 @@ from dotenv import load_dotenv
 
 from core.handlers import admin, basic, client
 from core.utils.apschedulermiddleware import SchedulerMiddleware
-from core.utils.commands import set_commands
+from core.utils.commands import set_commands_main
 
 load_dotenv()
 
 API_KEY_WEATHER = os.getenv('API_KEY_WEATHER')
-BOT_TOKEN = os.getenv('BOT_TOKEN')
+BOT_TOKEN = os.getenv('BOT_TOKEN_SEC')
 DEV_ID = os.getenv('DEV_ID')
 
 
 async def start_bot(bot: Bot):
-    await set_commands(bot)
+    await set_commands_main(bot)
     await bot.send_message(DEV_ID, text='Бот запущен!')
 
 

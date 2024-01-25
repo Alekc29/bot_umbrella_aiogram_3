@@ -1,13 +1,13 @@
 import re
 from datetime import datetime
 
-from aiogram import Bot, Router
+from aiogram import Bot, Router, F
 from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 from aiogram.types import Message, ReplyKeyboardRemove
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
-from core.keyboards.replykey import geo
+from core.keyboards.replykey import client_profile, geo
 from core.utils.class_fsm import FSMTown, FSMWish
 from core.utils.data_base import DataBase
 from core.utils.weather import check_weather
@@ -16,7 +16,7 @@ from main import DEV_ID
 router = Router()
 
 
-@router.message(Command('city'))
+@router.message(F.text == 'Город')
 async def get_town(message: Message, state: FSMContext):
     ''' Задать город для получения напоминания взять зонтик. '''
     await message.answer('Напишите свой город или отправьте геолокацию.',
@@ -25,9 +25,10 @@ async def get_town(message: Message, state: FSMContext):
     await state.set_state(FSMTown.town)
 
 
-@router.message(Command('cancel'))
+@router.message(F.text == 'отмена')
 async def cancel_handler(message: Message,
-                         state: FSMContext):
+                         state: FSMContext,
+                         bot: Bot):
     ''' Выход из машины состояний. '''
     current_state = await state.get_state()
     if current_state is None:
@@ -63,7 +64,7 @@ async def load_town_base(message: Message,
                 db = DataBase('users.db')
                 db.add_city(message.from_user.id, message.text.title())
                 await message.answer(
-                    f'Ваш город <b><u>{message.text.title()}</u></b>'
+                    f'Ваш город <b><u>{message.text.title()}</u></b> '
                     'успешно занесён в базу.\n'
                     'Теперь введите время напоминания в формате <u>чч:мм</u>.',
                     reply_markup=ReplyKeyboardRemove()
@@ -81,7 +82,7 @@ async def load_town_base(message: Message,
                                  reply_markup=ReplyKeyboardRemove())
 
 
-@router.message(Command('time'))
+@router.message(F.text == 'Время')
 async def get_time(message: Message,
                    state: FSMContext):
     ''' Задать время для получения напоминания взять зонтик. '''
@@ -108,16 +109,10 @@ async def load_timer_base(message: Message,
             db = DataBase('users.db')
             db.add_timer(message.from_user.id, text)
             await message.answer(
-                f'Ваше время <u>{text}</u> успешно занесёно в базу.'
+                f'Ваше время <u>{text}</u> успешно занесёно в базу.',
+                reply_markup=ReplyKeyboardRemove()
             )
             await state.clear()
-            apscheduler.add_job(send_reminder_umbrella,
-                                trigger='cron',
-                                hour=int(hours),
-                                minute=int(minutes),
-                                start_date=datetime.now(),
-                                kwargs={'bot': bot,
-                                        'chat_id': message.from_user.id})
         else:
             await message.answer(
                 'Время напоминания введено некорректно! Повторите попытку.'
@@ -125,9 +120,21 @@ async def load_timer_base(message: Message,
     except Exception as ex:
         print(ex)
         await message.answer('Произошла ошибка при занесении в базу.')
+    try:
+        apscheduler.add_job(send_reminder_umbrella,
+                            trigger='cron',
+                            id=str(message.from_user.id),
+                            hour=int(hours),
+                            minute=int(minutes),
+                            start_date=datetime.now(),
+                            kwargs={'bot': bot,
+                                    'chat_id': message.from_user.id})
+    except Exception as ex:
+        print(ex)
+        await message.answer('Произошла ошибка при подключении таймера.')    
 
 
-@router.message(Command('wish'))
+@router.message(F.text == 'Пожелание')
 async def get_wish(message: Message,
                    state: FSMContext):
     ''' Просит оставить пожелание разработчику. '''
@@ -185,7 +192,7 @@ async def get_weather(message: Message):
 
 
 @router.message(Command('profile'))
-async def get_profile(message: Message):
+async def get_profile(message: Message, bot: Bot):
     ''' Выдаёт информацию из базы пользователю. '''
     db = DataBase('users.db')
     try:
@@ -193,8 +200,28 @@ async def get_profile(message: Message):
         time = db.get_timer(message.from_user.id)
         await message.answer(f'{message.from_user.first_name}\n'
                              f'город: {city}\n'
-                             f'время напоминания: {time}')
+                             f'время напоминания: {time}',
+                             reply_markup=client_profile)
         await message.delete()
     except Exception as ex:
         print(ex)
         await message.answer('Произошла ошибка при обращении к базе.')
+
+
+@router.message(Command('off'))
+async def get_profile(message: Message, bot: Bot, apscheduler: AsyncIOScheduler,):
+    ''' Выключает напоминание. '''
+    db = DataBase('users.db')
+    try:
+        
+        db.add_timer(message.from_user.id, None)
+        await message.answer('Напоминание успешно отключено.')
+        await message.delete()
+    except Exception as ex:
+        print(ex)
+        await message.answer('Произошла ошибка при обращении к базе.')
+    try:
+        apscheduler.remove_job(job_id=str(message.from_user.id))
+    except Exception as ex:
+        print(ex)
+        await message.answer('Произошла ошибка при удалении таймера напоминания.')
