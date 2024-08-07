@@ -1,7 +1,7 @@
 import aiohttp
+from config import API_KEY_WEATHER
 
 from core.utils.data_base import DataBase
-from config import API_KEY_WEATHER
 
 NUM_DAYS = 16
 

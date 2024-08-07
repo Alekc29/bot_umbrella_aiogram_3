@@ -18,8 +18,8 @@ class PgData:
                 'lon FLOAT,'
                 'reminder_time TEXT);'
             )
-        except:
-            print('Ошибка при создании базы Postgres.')
+        except Exception as ex:
+            print(f'Ошибка при создании базы Postgres. {ex}')
 
     async def add_user(self,
                        user_id,
