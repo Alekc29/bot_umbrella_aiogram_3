@@ -192,10 +192,10 @@ async def get_weather(message: Message):
 
 
 @router.message(Command('carwash'))
-async def get_weather(message: Message):
+async def get_carwash(message: Message):
     ''' Выдаёт рекомендацию стоит ли мыть машину по прогнозу на 3 дня. '''
     try:
-        description, tempreture, wind, dt_txt, city = await check_weather_5_day(
+        description, temp, wind, dt_txt, city = await check_weather_5_day(
             message.from_user.id
         )
         if 'Rain' in description:
