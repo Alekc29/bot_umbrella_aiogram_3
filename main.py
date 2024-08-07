@@ -2,15 +2,14 @@ import asyncio
 import contextlib
 import logging
 
-from asyncpg import create_pool
 from aiogram import Bot, Dispatcher
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
+from asyncpg import create_pool
 
 from config import BOT_TOKEN, DEV_ID
 from core.handlers import admin, basic, client
 from core.middlewares.apschedulermiddleware import SchedulerMiddleware
 from core.utils.commands import set_commands_main
-from core.middlewares.dbmiddleware import db_session
 
 
 async def start_bot(bot: Bot):
@@ -38,9 +37,9 @@ async def start():
                "(%(filename)s).%(funcName)s(%(lineno)d) - %(message)s"
     )
     bot = Bot(token=BOT_TOKEN, parse_mode='HTML')
-    #pool_connect_db = await create_pool_db()
+    # pool_connect_db = await create_pool_db()
     dp = Dispatcher()
-    #dp.update.middleware.register(db_session(pool_connect_db))
+    # dp.update.middleware.register(db_session(pool_connect_db))
     scheduler = AsyncIOScheduler(timezone='Europe/Moscow')
     scheduler.start()
     dp.update.middleware.register(SchedulerMiddleware(scheduler))

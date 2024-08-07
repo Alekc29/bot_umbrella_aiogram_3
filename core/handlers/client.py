@@ -7,11 +7,12 @@ from aiogram.fsm.context import FSMContext
 from aiogram.types import Message, ReplyKeyboardRemove
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
+from config import DEV_ID
+
 from core.keyboards.replykey import client_profile, geo
 from core.utils.class_fsm import FSMTown, FSMWish
 from core.utils.data_base import DataBase
 from core.utils.weather import check_weather, check_weather_5_day
-from config import DEV_ID
 
 router = Router()
 
