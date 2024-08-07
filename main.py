@@ -1,21 +1,16 @@
 import asyncio
 import contextlib
 import logging
-import os
 
+from asyncpg import create_pool
 from aiogram import Bot, Dispatcher
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
-from dotenv import load_dotenv
 
+from config import BOT_TOKEN, DEV_ID
 from core.handlers import admin, basic, client
-from core.utils.apschedulermiddleware import SchedulerMiddleware
+from core.middlewares.apschedulermiddleware import SchedulerMiddleware
 from core.utils.commands import set_commands_main
-
-load_dotenv()
-
-API_KEY_WEATHER = os.getenv('API_KEY_WEATHER')
-BOT_TOKEN = os.getenv('BOT_TOKEN')
-DEV_ID = os.getenv('DEV_ID')
+from core.middlewares.dbmiddleware import db_session
 
 
 async def start_bot(bot: Bot):
@@ -27,6 +22,15 @@ async def stop_bot(bot: Bot):
     await bot.send_message(DEV_ID, text='Бот остановлен!')
 
 
+async def create_pool_db():
+    return await create_pool(user='postgres',
+                             password='postgres',
+                             database='users',
+                             host='127.0.0.1',
+                             port=5432,
+                             command_timeout=60)
+
+
 async def start():
     logging.basicConfig(
         level=logging.INFO,
@@ -34,7 +38,9 @@ async def start():
                "(%(filename)s).%(funcName)s(%(lineno)d) - %(message)s"
     )
     bot = Bot(token=BOT_TOKEN, parse_mode='HTML')
+    #pool_connect_db = await create_pool_db()
     dp = Dispatcher()
+    #dp.update.middleware.register(db_session(pool_connect_db))
     scheduler = AsyncIOScheduler(timezone='Europe/Moscow')
     scheduler.start()
     dp.update.middleware.register(SchedulerMiddleware(scheduler))

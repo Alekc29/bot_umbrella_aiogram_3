@@ -1,18 +1,13 @@
-import os
-
 from aiogram import Bot, Router
 from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 from aiogram.types import Message, ReplyKeyboardRemove
-from dotenv import load_dotenv
 
+from config import DEV_ID
 from core.keyboards.replykey import admin
 from core.utils.class_fsm import FSMPost
 from core.utils.data_base import DataBase
 
-load_dotenv()
-
-DEV_ID = int(os.getenv('DEV_ID'))
 
 router = Router()
 

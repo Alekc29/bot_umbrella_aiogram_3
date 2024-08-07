@@ -10,8 +10,8 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from core.keyboards.replykey import client_profile, geo
 from core.utils.class_fsm import FSMTown, FSMWish
 from core.utils.data_base import DataBase
-from core.utils.weather import check_weather
-from main import DEV_ID
+from core.utils.weather import check_weather, check_weather_5_day
+from config import DEV_ID
 
 router = Router()
 
@@ -72,7 +72,7 @@ async def load_town_base(message: Message,
                 await state.set_state(FSMTown.reminder_time)
             else:
                 await message.answer(
-                    'Произошла ошибка убедитесь,'
+                    'Произошла ошибка! Убедитесь,'
                     'что название города верно написано.\n'
                     'Повторите попытку ввода или отправьте геолокацию.'
                 )
@@ -100,16 +100,16 @@ async def load_timer_base(message: Message,
                           bot: Bot):
     ''' Ловим ответ по времени для напоминания про зонтик. '''
     try:
-        text = message.text
+        time = message.text
         pattern = r'\d{2}\W\d{2}'
-        time_good = re.fullmatch(pattern, text)
+        time_good = re.fullmatch(pattern, time)
         if time_good:
-            text = text.replace(text[2], ':')
-            hours, minutes = text.split(':')
+            time = time.replace(time[2], ':')
+            hours, minutes = time.split(':')
             db = DataBase('users.db')
-            db.add_timer(message.from_user.id, text)
+            db.add_timer(message.from_user.id, time)
             await message.answer(
-                f'Ваше время <u>{text}</u> успешно занесёно в базу.',
+                f'Ваше время <u>{time}</u> успешно занесёно в базу.',
                 reply_markup=ReplyKeyboardRemove()
             )
             await state.clear()
@@ -185,6 +185,24 @@ async def get_weather(message: Message):
         await message.answer(f'погода в городе: {city}\n'
                              f'Температура: {tempreture} C\n'
                              f'Скорость ветра: {wind} m/c\n{description}')
+        await message.delete()
+    except Exception as ex:
+        print(ex)
+        await message.answer('Проверьте название города.')
+
+
+@router.message(Command('carwash'))
+async def get_weather(message: Message):
+    ''' Выдаёт рекомендацию стоит ли мыть машину по прогнозу на 3 дня. '''
+    try:
+        description, tempreture, wind, dt_txt, city = await check_weather_5_day(
+            message.from_user.id
+        )
+        if 'Rain' in description:
+            await message.answer('Несоветую мыть машину, будет дождь.')
+        else:
+            await message.answer('Машину стоит помыть! '
+                                 'В ближайшие дни дождя не будет!')
         await message.delete()
     except Exception as ex:
         print(ex)

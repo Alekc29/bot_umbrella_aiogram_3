@@ -9,6 +9,10 @@ async def set_commands_main(bot: Bot):
             description='Узнать погоду сейчас'
         ),
         BotCommand(
+            command='carwash',
+            description='Стоит ли мыть машину???'
+        ),
+        BotCommand(
             command='profile',
             description='Ваш профиль'
         ),
