@@ -10,5 +10,9 @@ class FSMWish(StatesGroup):
     wish = State()
 
 
+class FSMWash(StatesGroup):
+    wash = State()
+
+
 class FSMPost(StatesGroup):
     post = State()

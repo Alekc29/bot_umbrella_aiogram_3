@@ -26,6 +26,9 @@ client_profile = ReplyKeyboardMarkup(
         [
             KeyboardButton(text='Город'),
             KeyboardButton(text='Время'),
+            KeyboardButton(text='Автомойка'),
+        ],
+        [
             KeyboardButton(text='Пожелание'),
             KeyboardButton(text='отмена'),
         ]

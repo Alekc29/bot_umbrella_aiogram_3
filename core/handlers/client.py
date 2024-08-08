@@ -9,7 +9,7 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from config import DEV_ID
 
 from core.keyboards.replykey import client_profile, geo
-from core.utils.class_fsm import FSMTown, FSMWish
+from core.utils.class_fsm import FSMTown, FSMWash, FSMWish
 from core.utils.data_base import DataBase
 from core.utils.weather import check_weather, check_weather_5_day
 
@@ -43,7 +43,7 @@ async def load_town_base(message: Message,
                          state: FSMContext):
     ''' Ловим ответ по городу для напоминания про зонтик. '''
     if message.location:
-        db = DataBase('users.db')
+        db = DataBase('umb_users.db')
         db.add_geo(message.from_user.id,
                    round(message.location.latitude, 2),
                    round(message.location.longitude, 2))
@@ -61,7 +61,7 @@ async def load_town_base(message: Message,
             pattern = r'[A-Za-zа-яё]+( [A-Za-zа-яё]+)*'
             city_good = re.fullmatch(pattern, text)
             if city_good:
-                db = DataBase('users.db')
+                db = DataBase('umb_users.db')
                 db.add_city(message.from_user.id, message.text.title())
                 await message.answer(
                     f'Ваш город <b><u>{message.text.title()}</u></b> '
@@ -106,7 +106,7 @@ async def load_timer_base(message: Message,
         if time_good:
             time = time.replace(time[2], ':')
             hours, minutes = time.split(':')
-            db = DataBase('users.db')
+            db = DataBase('umb_users.db')
             db.add_timer(message.from_user.id, time)
             await message.answer(
                 f'Ваше время <u>{time}</u> успешно занесёно в базу.',
@@ -158,6 +158,52 @@ async def load_wish_base(message: Message,
     await message.delete()
 
 
+@router.message(F.text == 'Автомойка')
+async def get_wash(message: Message,
+                   state: FSMContext):
+    ''' Просит ввести количество дней для мойки авто. '''
+    await message.answer('Укажите количество дней, которое я буду проверять, '
+                         'чтобы выдать рекомендацию по мойке машины. '
+                         'Количество дней может быть от 1 до 5. '
+                         'Прогноза погода на более 5 дней я не знаю. '
+                         'Если передумали выберите в меню: отмена.')
+    await message.delete()
+    await state.set_state(FSMWash.wash)
+
+
+@router.message(FSMWash.wash)
+async def load_wash_base(message: Message,
+                         bot: Bot,
+                         state: FSMContext):
+    ''' Ловим ответ по количеству дней для проверки автомойки. '''
+    try:
+        num_days = int(message.text)
+        if 0 < num_days < 6:
+            db = DataBase('umb_users.db')
+            db.add_num_days(message.from_user.id, num_days)
+            days = {1: 'день',
+                    2: 'дня',
+                    3: 'дня',
+                    4: 'дня',
+                    5: 'дней'}
+            await message.answer(
+                'Теперь, когда ты спросишь меня, стоит ли мыть машину, '
+                f'я буду проверять погоду за {num_days} {days[num_days]}.',
+                reply_markup=ReplyKeyboardRemove()
+            )
+            await state.clear()
+        else:
+            await message.answer(
+                'Количество дней введено некорректно! Повторите попытку.'
+                'Число должно быть больше либо равно 1, '
+                'но меньше либо равно 5.'
+            )
+    except Exception as ex:
+        print(ex)
+        await message.answer('Произошла ошибка при занесении в базу.')
+    await message.delete()
+
+
 async def send_reminder_umbrella(bot: Bot, chat_id: int):
     ''' Проверяет идёт ли дождь и отправляет сообщение напоминание. '''
     try:
@@ -179,11 +225,12 @@ async def send_reminder_umbrella(bot: Bot, chat_id: int):
 async def get_weather(message: Message):
     ''' Показывает текущюю погоду. '''
     try:
-        description, tempreture, wind, city = await check_weather(
+        description, tempreture, temp_max, wind, city = await check_weather(
             message.from_user.id
         )
         await message.answer(f'погода в городе: {city}\n'
                              f'Температура: {tempreture} C\n'
+                             f'Днём температура поднимется до {temp_max} C\n'
                              f'Скорость ветра: {wind} m/c\n{description}')
         await message.delete()
     except Exception as ex:
@@ -199,7 +246,7 @@ async def get_carwash(message: Message):
             message.from_user.id
         )
         if 'Rain' in description:
-            await message.answer('Несоветую мыть машину, будет дождь.')
+            await message.answer('Не советую мыть машину, будет дождь.')
         else:
             await message.answer('Машину стоит помыть! '
                                  'В ближайшие дни дождя не будет!')
@@ -212,13 +259,15 @@ async def get_carwash(message: Message):
 @router.message(Command('profile'))
 async def get_profile(message: Message, bot: Bot):
     ''' Выдаёт информацию из базы пользователю. '''
-    db = DataBase('users.db')
+    db = DataBase('umb_users.db')
     try:
         city = db.get_city(message.from_user.id)
         time = db.get_timer(message.from_user.id)
+        num_days = db.get_num_days(message.from_user.id)
         await message.answer(f'{message.from_user.first_name}\n'
                              f'город: {city}\n'
-                             f'время напоминания: {time}',
+                             f'время напоминания: {time}\n'
+                             f'дней перед мойкой авто: {num_days}',
                              reply_markup=client_profile)
         await message.delete()
     except Exception as ex:
@@ -231,7 +280,7 @@ async def off_reminder(message: Message,
                        bot: Bot,
                        apscheduler: AsyncIOScheduler,):
     ''' Выключает напоминание. '''
-    db = DataBase('users.db')
+    db = DataBase('umb_users.db')
     try:
         db.add_timer(message.from_user.id, None)
         await message.answer('Напоминание успешно отключено.')
