@@ -121,6 +121,7 @@ celerybeat.pid
 
 # Environments
 users.db
+umb_users.db
 .env
 .venv
 env/

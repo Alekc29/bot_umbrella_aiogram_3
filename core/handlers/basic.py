@@ -10,7 +10,7 @@ router = Router()
 @router.message(Command(commands=['start', 'run', 'help']))
 async def get_start(message: Message, bot: Bot):
     # await db.add_user(message.from_user.id, message.from_user.first_name)
-    db = DataBase('users.db')
+    db = DataBase('umb_users.db')
     if not db.user_exists(message.from_user.id):
         db.add_user(message.from_user.id, message.from_user.first_name)
     await message.answer(

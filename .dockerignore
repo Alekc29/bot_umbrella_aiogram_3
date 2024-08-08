@@ -1,4 +1,5 @@
 venv
 users.db
+umb_users.db
 .git
 __pycache__
