@@ -54,7 +54,7 @@ jobs:
         key: ${{ secrets.SSH_KEY }}
         passphrase: ${{ secrets.PASSPHRASE }}
         script: |
-          sudo docker-compose stop
+          sudo docker container stop bot_umbrella
           sudo docker container rm bot_umbrella
           sudo docker pull ${{ secrets.DOCKER_USERNAME }}/bot_umbrella:latest
           sudo docker-compose up -d

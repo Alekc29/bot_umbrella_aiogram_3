@@ -1,6 +1,7 @@
 from aiogram import Bot, F, Router
 from aiogram.filters import Command
 from aiogram.types import Message
+from config import BASE
 
 from core.utils.data_base import DataBase
 
@@ -10,14 +11,14 @@ router = Router()
 @router.message(Command(commands=['start', 'run', 'help']))
 async def get_start(message: Message, bot: Bot):
     # await db.add_user(message.from_user.id, message.from_user.first_name)
-    db = DataBase('umb_users.db')
+    db = DataBase(BASE)
     if not db.user_exists(message.from_user.id):
         db.add_user(message.from_user.id, message.from_user.first_name)
     await message.answer(
-        'Привет! Я буду напоминать тебе брать зонтик в дождливую погоду. '
+        'Привет! Я буду напоминать тебе брать зонтик в дождливую погоду.\n'
         'Для начала работы укажите город через /city '
-        'и время напоминания через /time. '
-        'Для получения информации о текущей погоде напишите /weather'
+        'и время напоминания через /time.\n'
+        'Для получения информации о текущей погоде напишите /weather.'
     )
 
 

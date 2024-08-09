@@ -1,12 +1,12 @@
 import aiohttp
-from config import API_KEY_WEATHER
+from config import API_KEY_WEATHER, BASE
 
 from core.utils.data_base import DataBase
 
 
 async def check_weather(chat_id: int):
     ''' Выдаёт текущую погоду по названию города или координатам. '''
-    db = DataBase('umb_users.db')
+    db = DataBase(BASE)
     city = db.get_city(chat_id)
     async with aiohttp.ClientSession() as session:
         if city:
@@ -34,7 +34,7 @@ async def check_weather(chat_id: int):
 
 async def check_weather_5_day(chat_id: int):
     ''' Выдаёт погоду за 5 дней по названию города или координатам. '''
-    db = DataBase('umb_users.db')
+    db = DataBase(BASE)
     city = db.get_city(chat_id)
     num_days = db.get_num_days(chat_id)
     num_days *= 8

@@ -2,7 +2,7 @@ from aiogram import Bot, Router
 from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 from aiogram.types import Message, ReplyKeyboardRemove
-from config import DEV_ID
+from config import BASE, DEV_ID
 
 from core.keyboards.replykey import admin
 from core.utils.class_fsm import FSMPost
@@ -13,7 +13,7 @@ router = Router()
 
 @router.message(Command('moderator'))
 async def get_admin_keyboards(message: Message):
-    if message.from_user.id == int(DEV_ID):
+    if message.from_user.id == DEV_ID:
         await message.answer('Что босс надо?',
                              reply_markup=admin)
         await message.delete()
@@ -48,7 +48,7 @@ async def send_mailing_bot(message: Message,
                            bot: Bot,
                            state: FSMContext):
     if message.from_user.id == DEV_ID:
-        db = DataBase('umb_users.db')
+        db = DataBase(BASE)
         users = db.get_users()
         await send_message_to_users(users, message, bot)
         await message.answer(
@@ -60,7 +60,7 @@ async def send_mailing_bot(message: Message,
 @router.message(Command('Статистика'))
 async def get_statistics(message: Message):
     if message.from_user.id == DEV_ID:
-        db = DataBase('umb_users.db')
+        db = DataBase(BASE)
         await message.answer(f'Кол-во юзеров: {db.count_all_users()}')
         await message.delete()
 

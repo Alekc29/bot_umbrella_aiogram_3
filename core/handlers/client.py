@@ -6,7 +6,7 @@ from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 from aiogram.types import Message, ReplyKeyboardRemove
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
-from config import DEV_ID
+from config import BASE, DEV_ID
 
 from core.keyboards.replykey import client_profile, geo
 from core.utils.class_fsm import FSMTown, FSMWash, FSMWish
@@ -16,7 +16,7 @@ from core.utils.weather import check_weather, check_weather_5_day
 router = Router()
 
 
-@router.message(F.text == 'Город')
+@router.message(F.text.in_(['Город', '/city']))
 async def get_town(message: Message, state: FSMContext):
     ''' Задать город для получения напоминания взять зонтик. '''
     await message.answer('Напишите свой город или отправьте геолокацию.',
@@ -25,7 +25,7 @@ async def get_town(message: Message, state: FSMContext):
     await state.set_state(FSMTown.town)
 
 
-@router.message(F.text == 'отмена')
+@router.message(F.text.in_(['отмена', 'Отмена', 'cancel', '/cancel']))
 async def cancel_handler(message: Message,
                          state: FSMContext,
                          bot: Bot):
@@ -43,7 +43,7 @@ async def load_town_base(message: Message,
                          state: FSMContext):
     ''' Ловим ответ по городу для напоминания про зонтик. '''
     if message.location:
-        db = DataBase('umb_users.db')
+        db = DataBase(BASE)
         db.add_geo(message.from_user.id,
                    round(message.location.latitude, 2),
                    round(message.location.longitude, 2))
@@ -82,7 +82,7 @@ async def load_town_base(message: Message,
                                  reply_markup=ReplyKeyboardRemove())
 
 
-@router.message(F.text == 'Время')
+@router.message(F.text.in_(['Время', '/time']))
 async def get_time(message: Message,
                    state: FSMContext):
     ''' Задать время для получения напоминания взять зонтик. '''
@@ -106,7 +106,7 @@ async def load_timer_base(message: Message,
         if time_good:
             time = time.replace(time[2], ':')
             hours, minutes = time.split(':')
-            db = DataBase('umb_users.db')
+            db = DataBase(BASE)
             db.add_timer(message.from_user.id, time)
             await message.answer(
                 f'Ваше время <u>{time}</u> успешно занесёно в базу.',
@@ -179,7 +179,7 @@ async def load_wash_base(message: Message,
     try:
         num_days = int(message.text)
         if 0 < num_days < 6:
-            db = DataBase('umb_users.db')
+            db = DataBase(BASE)
             db.add_num_days(message.from_user.id, num_days)
             days = {1: 'день',
                     2: 'дня',
@@ -259,7 +259,7 @@ async def get_carwash(message: Message):
 @router.message(Command('profile'))
 async def get_profile(message: Message, bot: Bot):
     ''' Выдаёт информацию из базы пользователю. '''
-    db = DataBase('umb_users.db')
+    db = DataBase(BASE)
     try:
         city = db.get_city(message.from_user.id)
         time = db.get_timer(message.from_user.id)
@@ -280,7 +280,7 @@ async def off_reminder(message: Message,
                        bot: Bot,
                        apscheduler: AsyncIOScheduler,):
     ''' Выключает напоминание. '''
-    db = DataBase('umb_users.db')
+    db = DataBase(BASE)
     try:
         db.add_timer(message.from_user.id, None)
         await message.answer('Напоминание успешно отключено.')
