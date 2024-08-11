@@ -27,9 +27,8 @@ async def check_weather(chat_id: int):
                 db.add_city(chat_id, city)
         description = data['weather'][0]['main']
         tempreture = round(data['main']['temp'])
-        temp_max = round(data['main']['temp_max'])
         wind = round(data['wind']['speed'])
-        return [description, tempreture, temp_max, wind, city]
+        return [description, tempreture, wind, city]
 
 
 async def check_weather_5_day(chat_id: int):

@@ -225,12 +225,11 @@ async def send_reminder_umbrella(bot: Bot, chat_id: int):
 async def get_weather(message: Message):
     ''' Показывает текущюю погоду. '''
     try:
-        description, tempreture, temp_max, wind, city = await check_weather(
+        description, tempreture, wind, city = await check_weather(
             message.from_user.id
         )
         await message.answer(f'погода в городе: {city}\n'
                              f'Температура: {tempreture} C\n'
-                             f'Днём температура поднимется до {temp_max} C\n'
                              f'Скорость ветра: {wind} m/c\n{description}')
         await message.delete()
     except Exception as ex:
