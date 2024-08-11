@@ -207,14 +207,31 @@ async def load_wash_base(message: Message,
 async def send_reminder_umbrella(bot: Bot, chat_id: int):
     ''' Проверяет идёт ли дождь и отправляет сообщение напоминание. '''
     try:
-        description, tempreture, wind, city = await check_weather(chat_id)
-        if description == 'rain':
-            await bot.send_message(chat_id,
-                                   'Возьми зонтик! Сегодня будет дождик!')
+        description, temp, wind, dt_txt, city = await check_weather_5_day(
+            chat_id, 1
+        )
+        max_temp = max(temp)
+        if 'Rain' in description:
+            text_message = ''
+            for inc in range(0, 8):
+                if description[inc] == 'Rain':
+                    text_message += f'{dt_txt[inc][11:13]}, '
+            await bot.send_message(
+                chat_id,
+                'Возьми зонтик! '
+                f'Сегодня будет дождик в {text_message[:-2]} часов!\n'
+                f'Температура днём поднимется до {max_temp} C.\n'
+                f'Сейчас на улице {temp[0]} C.\n'
+                f'Ветер {wind[0]} м/с.'
+            )
         else:
-            await bot.send_message(chat_id,
-                                   'Сегодня зонтик не пригодится!\n' +
-                                   f'На улице {tempreture} градусов.')
+            await bot.send_message(
+                chat_id,
+                'Сегодня зонтик не пригодится!\n'
+                f'Температура днём поднимется до {max_temp} C.\n'
+                f'Сейчас на улице {temp[0]} C.\n'
+                f'Ветер {wind[0]} м/с.'
+            )
     except Exception as ex:
         print(ex)
         await bot.send_message(chat_id,
@@ -241,8 +258,11 @@ async def get_weather(message: Message):
 async def get_carwash(message: Message):
     ''' Выдаёт рекомендацию стоит ли мыть машину по прогнозу на 3 дня. '''
     try:
+        db = DataBase(BASE)
+        num_days = db.get_num_days(message.from_user.id)
         description, temp, wind, dt_txt, city = await check_weather_5_day(
-            message.from_user.id
+            message.from_user.id,
+            num_days
         )
         if 'Rain' in description:
             await message.answer('Не советую мыть машину, будет дождь.')

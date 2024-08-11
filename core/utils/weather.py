@@ -31,11 +31,10 @@ async def check_weather(chat_id: int):
         return [description, tempreture, wind, city]
 
 
-async def check_weather_5_day(chat_id: int):
+async def check_weather_5_day(chat_id: int, num_days):
     ''' Выдаёт погоду за 5 дней по названию города или координатам. '''
     db = DataBase(BASE)
     city = db.get_city(chat_id)
-    num_days = db.get_num_days(chat_id)
     num_days *= 8
     async with aiohttp.ClientSession() as session:
         if city:
@@ -60,7 +59,7 @@ async def check_weather_5_day(chat_id: int):
         dt_txt = []
         for inc in range(0, num_days):
             description.append(data['list'][inc]['weather'][0]['main'])
-            tempreture.append(data['list'][inc]['main']['temp'])
-            wind.append(data['list'][inc]['wind']['speed'])
+            tempreture.append(round(data['list'][inc]['main']['temp']))
+            wind.append(round(data['list'][inc]['wind']['speed']))
             dt_txt.append(data['list'][inc]['dt_txt'])
         return [description, tempreture, wind, dt_txt, city]
