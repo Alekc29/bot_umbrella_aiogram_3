@@ -4,11 +4,11 @@ from datetime import datetime
 from aiogram import Bot, F, Router
 from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
-from aiogram.types import Message, ReplyKeyboardRemove
+from aiogram.types import CallbackQuery, Message, ReplyKeyboardRemove
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from config import BASE, DEV_ID
 
-from core.keyboards.replykey import client_profile, geo
+from core.keyboards.replykey import client_profile, client_weather, geo
 from core.utils.class_fsm import FSMTown, FSMWash, FSMWish
 from core.utils.data_base import DataBase
 from core.utils.weather import check_weather, check_weather_5_day
@@ -242,16 +242,86 @@ async def send_reminder_umbrella(bot: Bot, chat_id: int):
 async def get_weather(message: Message):
     ''' Показывает текущюю погоду. '''
     try:
-        description, tempreture, wind, city = await check_weather(
-            message.from_user.id
-        )
-        await message.answer(f'погода в городе: {city}\n'
-                             f'Температура: {tempreture} C\n'
-                             f'Скорость ветра: {wind} m/c\n{description}')
+        await message.answer('Выберите один из вариантов прогноза.',
+                             reply_markup=client_weather)
         await message.delete()
     except Exception as ex:
         print(ex)
         await message.answer('Проверьте название города.')
+
+
+@router.callback_query(F.data == 'weather_1_day')
+async def checked_weather_1_day(cq: CallbackQuery, bot: Bot):
+    ''' Показывает текущюю погоду. '''
+    try:
+        desc, temp, wind, city = await check_weather(
+            chat_id=(int(cq.message.chat.id))
+        )
+        await cq.message.answer(f'погода в городе: {city}\n'
+                                f'Температура: {temp} C\n'
+                                f'Скорость ветра: {wind} m/c\n{desc}')
+        await cq.message.delete()
+    except Exception as ex:
+        print(ex)
+        await cq.message.answer('Проверьте название города.')
+
+
+async def check_var_weather(chat_id: int, num_days: int):
+    ''' Выдаёт прогноз на указанное количество дней. '''
+    try:
+        desc, temp, wind, dt_txt, city = await check_weather_5_day(
+            chat_id, num_days
+        )
+        max_temp, min_temp = [], []
+        max_wind, min_wind = [], []
+        dt = []
+        for day in range(num_days):
+            day_start_index = day * 8
+            day_temps = temp[day_start_index: day_start_index + 8]
+            max_temp.append(max(day_temps))
+            min_temp.append(min(day_temps))
+            day_winds = wind[day_start_index: day_start_index + 8]
+            max_wind.append(max(day_winds))
+            min_wind.append(min(day_winds))
+            dt.append(dt_txt[day_start_index][:10])
+        text_message = f'Погода в городе: {city}\n'
+        for inc in range(num_days):
+            text_message += f'{dt[inc]}\n'
+            text_message += f'Температура днём от {min_temp[inc]} '
+            text_message += f'до {max_temp[inc]} С\n'
+            text_message += f'Ветер от {min_wind[inc]} '
+            text_message += f'до {max_wind[inc]} м/с\n'
+        return text_message
+    except Exception as ex:
+        print(ex)
+
+
+@router.callback_query(F.data == 'weather_3_days')
+async def checked_weather_3_days(cq: CallbackQuery, bot: Bot):
+    ''' Показывает погоду за 3 дня. '''
+    try:
+        text_message = await check_var_weather(
+            cq.message.chat.id, 3
+        )
+        await cq.message.answer(text_message)
+        await cq.message.delete()
+    except Exception as ex:
+        print(ex)
+        await cq.message.answer('Проверьте название города.')
+
+
+@router.callback_query(F.data == 'weather_5_days')
+async def checked_weather_5_days(cq: CallbackQuery, bot: Bot):
+    ''' Показывает погоду за 5 дней. '''
+    try:
+        text_message = await check_var_weather(
+            cq.message.chat.id, 5
+        )
+        await cq.message.answer(text_message)
+        await cq.message.delete()
+    except Exception as ex:
+        print(ex)
+        await cq.message.answer('Проверьте название города.')
 
 
 @router.message(Command('carwash'))

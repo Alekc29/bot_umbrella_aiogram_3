@@ -1,4 +1,5 @@
-from aiogram.types import KeyboardButton, ReplyKeyboardMarkup
+from aiogram.types import (InlineKeyboardButton, InlineKeyboardMarkup,
+                           KeyboardButton, ReplyKeyboardMarkup)
 
 geo = ReplyKeyboardMarkup(
     keyboard=[
@@ -34,4 +35,21 @@ client_profile = ReplyKeyboardMarkup(
         ]
     ],
     resize_keyboard=True
+)
+
+client_weather = InlineKeyboardMarkup(
+    inline_keyboard=[
+        [
+            InlineKeyboardButton(text='Погода сейчас',
+                                 callback_data='weather_1_day'),
+        ],
+        [
+            InlineKeyboardButton(text='Погода на 3 дня',
+                                 callback_data='weather_3_days'),
+        ],
+        [
+            InlineKeyboardButton(text='Погода на 5 дней',
+                                 callback_data='weather_5_days'),
+        ]
+    ]
 )

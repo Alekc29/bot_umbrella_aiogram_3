@@ -6,7 +6,7 @@ async def set_commands_main(bot: Bot):
     commands = [
         BotCommand(
             command='weather',
-            description='Узнать погоду сейчас'
+            description='Погода'
         ),
         BotCommand(
             command='carwash',

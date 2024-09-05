@@ -31,7 +31,7 @@ async def check_weather(chat_id: int):
         return [description, tempreture, wind, city]
 
 
-async def check_weather_5_day(chat_id: int, num_days):
+async def check_weather_5_day(chat_id: int, num_days: int):
     ''' Выдаёт погоду за 5 дней по названию города или координатам. '''
     db = DataBase(BASE)
     city = db.get_city(chat_id)
