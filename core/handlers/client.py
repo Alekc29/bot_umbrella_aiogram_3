@@ -272,25 +272,20 @@ async def check_var_weather(chat_id: int, num_days: int):
         desc, temp, wind, dt_txt, city = await check_weather_5_day(
             chat_id, num_days
         )
-        max_temp, min_temp = [], []
-        max_wind, min_wind = [], []
-        dt = []
+        text_message = f'Погода в городе: {city}\n'
         for day in range(num_days):
             day_start_index = day * 8
             day_temps = temp[day_start_index: day_start_index + 8]
-            max_temp.append(max(day_temps))
-            min_temp.append(min(day_temps))
             day_winds = wind[day_start_index: day_start_index + 8]
-            max_wind.append(max(day_winds))
-            min_wind.append(min(day_winds))
-            dt.append(dt_txt[day_start_index][:10])
-        text_message = f'Погода в городе: {city}\n'
-        for inc in range(num_days):
-            text_message += f'{dt[inc]}\n'
-            text_message += f'Температура днём от {min_temp[inc]} '
-            text_message += f'до {max_temp[inc]} С\n'
-            text_message += f'Ветер от {min_wind[inc]} '
-            text_message += f'до {max_wind[inc]} м/с\n'
+            day_descs = desc[day_start_index: day_start_index + 8]
+            text_message += f'<strong>{dt_txt[day_start_index][:10]}</strong>\n'
+            text_message += f'Температура днём от {min(day_temps)} '
+            text_message += f'до {max(day_temps)} С\n'
+            text_message += f'Ветер от {min(day_winds)} '
+            text_message += f'до {max(day_winds)} м/с\n'
+            for txt in set(day_descs):
+                text_message += f'{txt}, '
+            text_message = text_message[:-2] + '.\n'
         return text_message
     except Exception as ex:
         print(ex)
