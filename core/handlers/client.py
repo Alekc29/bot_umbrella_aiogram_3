@@ -278,7 +278,7 @@ async def check_var_weather(chat_id: int, num_days: int):
             day_temps = temp[day_start_index: day_start_index + 8]
             day_winds = wind[day_start_index: day_start_index + 8]
             day_descs = desc[day_start_index: day_start_index + 8]
-            text_message += f'<strong>{dt_txt[day_start_index][:10]}</strong>\n'
+            text_message += f'<b>{dt_txt[day_start_index][:10]}</b>\n'
             text_message += f'Температура днём от {min(day_temps)} '
             text_message += f'до {max(day_temps)} С\n'
             text_message += f'Ветер от {min(day_winds)} '
