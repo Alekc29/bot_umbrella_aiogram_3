@@ -3,6 +3,8 @@ import contextlib
 import logging
 
 from aiogram import Bot, Dispatcher
+from aiogram.client.default import DefaultBotProperties
+from aiogram.enums import ParseMode
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from asyncpg import create_pool
 
@@ -36,7 +38,8 @@ async def start():
         format="%(asctime)s - [%(levelname)s] - %(name)s - "
                "(%(filename)s).%(funcName)s(%(lineno)d) - %(message)s"
     )
-    bot = Bot(token=BOT_TOKEN)
+    bot = Bot(token=BOT_TOKEN,
+              default=DefaultBotProperties(parse_mode=ParseMode.HTML))
     # pool_connect_db = await create_pool_db()
     dp = Dispatcher()
     # dp.update.middleware.register(db_session(pool_connect_db))
