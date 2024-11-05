@@ -36,7 +36,7 @@ async def start():
         format="%(asctime)s - [%(levelname)s] - %(name)s - "
                "(%(filename)s).%(funcName)s(%(lineno)d) - %(message)s"
     )
-    bot = Bot(token=BOT_TOKEN, parse_mode='HTML')
+    bot = Bot(token=BOT_TOKEN)
     # pool_connect_db = await create_pool_db()
     dp = Dispatcher()
     # dp.update.middleware.register(db_session(pool_connect_db))
