@@ -54,12 +54,14 @@ async def check_weather_5_day(chat_id: int, num_days: int):
                 city = data['city']['name']
                 db.add_city(chat_id, city)
         description = []
+        main = []
         tempreture = []
         wind = []
         dt_txt = []
         for inc in range(0, num_days):
-            description.append(data['list'][inc]['weather'][0]['main'])
+            description.append(data['list'][inc]['weather'][0]['description'])
+            main.append(data['list'][inc]['weather'][0]['main'])
             tempreture.append(round(data['list'][inc]['main']['temp']))
             wind.append(round(data['list'][inc]['wind']['speed']))
             dt_txt.append(data['list'][inc]['dt_txt'])
-        return [description, tempreture, wind, dt_txt, city]
+        return [description, main, tempreture, wind, dt_txt, city]

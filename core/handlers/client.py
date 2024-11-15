@@ -207,19 +207,22 @@ async def load_wash_base(message: Message,
 async def send_reminder_umbrella(bot: Bot, chat_id: int):
     ''' Проверяет идёт ли дождь и отправляет сообщение напоминание. '''
     try:
-        description, temp, wind, dt_txt, city = await check_weather_5_day(
+        desc, main, temp, wind, dt_txt, city = await check_weather_5_day(
             chat_id, 1
         )
         max_temp = max(temp)
-        if 'Rain' in description:
-            text_message = ''
-            for inc in range(0, 8):
-                if description[inc] == 'Rain':
+        if 'Rain' in main:
+            text_message, text_desc = '', ''
+            day_desc = []
+            for inc in range(8):
+                if main[inc] == 'Rain':
                     text_message += f'{dt_txt[inc][11:13]}, '
+                    day_desc.append(desc[inc])
+            text_desc = ', '.join(set(day_desc)).strip()
             await bot.send_message(
                 chat_id,
                 'Возьми зонтик! '
-                f'Сегодня будет дождик в {text_message[:-2]} часов!\n'
+                f'Сегодня будет {text_desc} в {text_message[:-2]} часов!\n'
                 f'Температура днём поднимется до {max_temp} C.\n'
                 f'Сейчас на улице {temp[0]} C.\n'
                 f'Ветер {wind[0]} м/с.'
@@ -269,7 +272,7 @@ async def checked_weather_1_day(cq: CallbackQuery, bot: Bot):
 async def check_var_weather(chat_id: int, num_days: int):
     ''' Выдаёт прогноз на указанное количество дней. '''
     try:
-        desc, temp, wind, dt_txt, city = await check_weather_5_day(
+        desc, main, temp, wind, dt_txt, city = await check_weather_5_day(
             chat_id, num_days
         )
         text_message = f'Погода в городе: {city}\n'
@@ -277,15 +280,13 @@ async def check_var_weather(chat_id: int, num_days: int):
             day_start_index = day * 8
             day_temps = temp[day_start_index: day_start_index + 8]
             day_winds = wind[day_start_index: day_start_index + 8]
-            day_descs = desc[day_start_index: day_start_index + 8]
+            day_descs = main[day_start_index: day_start_index + 8]
             text_message += f'<b>{dt_txt[day_start_index][:10]}</b>\n'
             text_message += f'Температура днём от {min(day_temps)} '
             text_message += f'до {max(day_temps)} С\n'
             text_message += f'Ветер от {min(day_winds)} '
             text_message += f'до {max(day_winds)} м/с\n'
-            for txt in set(day_descs):
-                text_message += f'{txt}, '
-            text_message = text_message[:-2] + '.\n'
+            text_message += ', '.join(dict.fromkeys(day_descs)) + '.\n'
         return text_message
     except Exception as ex:
         print(ex)
@@ -325,11 +326,11 @@ async def get_carwash(message: Message):
     try:
         db = DataBase(BASE)
         num_days = db.get_num_days(message.from_user.id)
-        description, temp, wind, dt_txt, city = await check_weather_5_day(
+        desc, main, temp, wind, dt_txt, city = await check_weather_5_day(
             message.from_user.id,
             num_days
         )
-        if 'Rain' in description:
+        if 'Rain' in main:
             await message.answer('Не советую мыть машину, будет дождь.')
         else:
             await message.answer('Машину стоит помыть! '
