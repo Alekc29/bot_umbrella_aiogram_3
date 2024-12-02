@@ -45,5 +45,6 @@ docker-compose up -d --build
 ```
 
 Телеграмм-бот доступен по адресу: [@reminder_umbrella_bot](https://t.me/reminder_umbrella_bot)
-
-![alt text](image.png)
+<div style='text-align: center;'>
+<img src="image.png" width="200" height="200">
+</div>
